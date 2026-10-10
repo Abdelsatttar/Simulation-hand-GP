@@ -31,6 +31,7 @@ const layerObjects = {
 const shellMaterials = [];
 const fingers = [];
 const servoBlocks = [];
+const servoHorns = [];
 let currentPose = "open";
 let isExploded = false;
 let explodeTarget = 0;
@@ -381,9 +382,11 @@ function createActuatorsAndCuff() {
     addMesh(group, new THREE.CylinderGeometry(0.044, 0.044, 0.04, 16), mat.graphite, "servos", [0, 0.13, 0.13], {
       rotation: [Math.PI / 2, 0, 0], explode: [x * 0.45, -0.035, 0.22]
     });
-    addMesh(group, new THREE.BoxGeometry(0.1, 0.035, 0.025), mat.white, "servos", [0, 0.16, 0.16], {
+    const horn = addMesh(group, new THREE.BoxGeometry(0.1, 0.035, 0.025), mat.white, "servos", [0, 0.16, 0.16], {
       rotation: [0, 0, index % 2 ? -0.22 : 0.22], explode: [x * 0.45, -0.035, 0.22]
     });
+    horn.userData.baseHornRotationZ = horn.rotation.z;
+    servoHorns[index] = horn;
     [[-0.067, -0.09, 0.117], [0.067, -0.09, 0.117]].forEach(p => {
       addMesh(group, new THREE.CylinderGeometry(0.012, 0.012, 0.014, 10), mat.brass, "servos", p, {
         rotation: [Math.PI / 2, 0, 0], explode: [x * 0.45, -0.035, 0.22]
@@ -613,6 +616,15 @@ function setPose(name) {
       joint.rotation.z = values[index + 1] ?? values[2] ?? 0;
     });
   });
+  const servoPose = {
+    open: [0, 0, 0, 0, 0],
+    fist: [0.95, 1, 1, 0.95, 0.78],
+    pinch: [0.62, 0.9, 0.93, 0.88, 0.72],
+    point: [0, 0.92, 0.95, 0.88, 0.42]
+  }[name] || [0, 0, 0, 0, 0];
+  servoHorns.forEach((horn, index) => {
+    if (horn) horn.rotation.z = horn.userData.baseHornRotationZ + servoPose[index] * 0.9;
+  });
   $$(".pose-card").forEach(card => {
     const selected = card.dataset.pose === name;
     card.classList.toggle("selected", selected);
@@ -645,7 +657,10 @@ function applyGripAmount(amount, statusLabel = "POSE: PROPORTIONAL GRIP") {
     finger.root.rotation.z = finger.baseAngle + baseFlex;
     finger.joints.forEach((joint, index) => joint.rotation.z = index === 0 ? first : second);
   });
-  $(".pose-card").forEach(card => {
+  servoHorns.forEach((horn, index) => {
+    if (horn) horn.rotation.z = horn.userData.baseHornRotationZ + amount * (index === 4 ? 0.78 : 0.92);
+  });
+  $$(".pose-card").forEach(card => {
     card.classList.remove("selected");
     card.setAttribute("aria-pressed", "false");
   });
