@@ -516,6 +516,148 @@ function createElectronics() {
   });
 }
 
+function createHandCamera() {
+  const module = new THREE.Group();
+  module.name = "Back-of-hand camera module";
+  module.position.set(0.015, 0.22, 0.245);
+  handRoot.add(module);
+  addMesh(module, new THREE.BoxGeometry(0.46, 0.38, 0.045), mat.pcb, "sensors", [0, 0, 0], {
+    name: "Camera PCB", explode: [0.02, 0.1, 0.35]
+  });
+  addMesh(module, new THREE.BoxGeometry(0.33, 0.28, 0.036), mat.graphite, "sensors", [0, 0, 0.027], {
+    explode: [0.02, 0.1, 0.35]
+  });
+  // Lens barrel, metal bezel and blue optical glass, all separate selectable meshes.
+  addMesh(module, new THREE.CylinderGeometry(0.118, 0.135, 0.092, 32), mat.graphite, "sensors", [0, 0.012, 0.085], {
+    rotation: [Math.PI / 2, 0, 0], name: "Camera lens barrel", explode: [0.02, 0.1, 0.37]
+  });
+  addMesh(module, new THREE.CylinderGeometry(0.095, 0.108, 0.022, 32), mat.shellDark, "sensors", [0, 0.012, 0.14], {
+    rotation: [Math.PI / 2, 0, 0], explode: [0.02, 0.1, 0.39]
+  });
+  addMesh(module, new THREE.CylinderGeometry(0.074, 0.082, 0.012, 32), mat.sensorGlass, "sensors", [0, 0.012, 0.155], {
+    rotation: [Math.PI / 2, 0, 0], name: "Optical lens", explode: [0.02, 0.1, 0.4]
+  });
+  addMesh(module, new THREE.CylinderGeometry(0.026, 0.026, 0.014, 24), mat.sensorBlue, "sensors", [0, 0.012, 0.165], {
+    rotation: [Math.PI / 2, 0, 0], explode: [0.02, 0.1, 0.41]
+  });
+  [[-0.185,-0.14,0.04],[0.185,-0.14,0.04],[-0.185,0.14,0.04],[0.185,0.14,0.04]].forEach(p => {
+    addMesh(module, new THREE.CylinderGeometry(0.012, 0.012, 0.012, 12), mat.brass, "sensors", p, {
+      rotation: [Math.PI / 2, 0, 0], explode: [0.02, 0.1, 0.35]
+    });
+  });
+  addMesh(module, new THREE.BoxGeometry(0.025, 0.018, 0.008), mat.wireTeal, "sensors", [-0.16, 0.13, 0.053], {
+    explode: [0.02, 0.1, 0.35]
+  });
+  // Camera ribbon leads route back into the wrist controller.
+  addLine(handRoot, [[0.21,0.12,0.25],[0.27,-0.08,0.25],[0.25,-0.39,0.26],[0.17,-0.72,0.29],[0.12,-1.03,0.34]], mat.cableDark, "tendons", 0.025, [0.02,0.05,0.3]);
+  addLine(handRoot, [[0.205,0.12,0.27],[0.29,-0.08,0.27],[0.27,-0.39,0.28],[0.19,-0.72,0.31],[0.14,-1.03,0.36]], mat.wireTeal, "tendons", 0.008, [0.02,0.05,0.31]);
+}
+
+function createForearmAndEmgPads() {
+  // Human-forearm reference shape with procedural skin grain, behind the prosthetic wrist.
+  const skinCanvas = document.createElement("canvas");
+  skinCanvas.width = 256;
+  skinCanvas.height = 512;
+  const skinCtx = skinCanvas.getContext("2d");
+  skinCtx.fillStyle = "#c58f70";
+  skinCtx.fillRect(0, 0, skinCanvas.width, skinCanvas.height);
+  for (let i = 0; i < 9500; i++) {
+    skinCtx.fillStyle = Math.random() > 0.5 ? "rgba(93,47,31,0.045)" : "rgba(255,222,187,0.06)";
+    const x = Math.random() * skinCanvas.width;
+    const y = Math.random() * skinCanvas.height;
+    const r = Math.random() * 1.5 + 0.2;
+    skinCtx.beginPath();
+    skinCtx.ellipse(x, y, r, r * (Math.random() * 1.5 + 0.5), Math.random(), 0, Math.PI * 2);
+    skinCtx.fill();
+  }
+  for (let i = 0; i < 13; i++) {
+    skinCtx.strokeStyle = "rgba(111,63,44,0.035)";
+    skinCtx.lineWidth = 1 + Math.random() * 2;
+    skinCtx.beginPath();
+    const y = Math.random() * skinCanvas.height;
+    skinCtx.moveTo(0, y);
+    skinCtx.bezierCurveTo(70, y - 8, 160, y + 12, 256, y + 3);
+    skinCtx.stroke();
+  }
+  const skinTexture = new THREE.CanvasTexture(skinCanvas);
+  skinTexture.colorSpace = THREE.SRGBColorSpace;
+  skinTexture.wrapS = THREE.RepeatWrapping;
+  skinTexture.wrapT = THREE.RepeatWrapping;
+  skinTexture.repeat.set(1.25, 1.1);
+  mat.skin.map = skinTexture;
+  mat.skin.bumpMap = skinTexture;
+  mat.skin.bumpScale = 0.012;
+  mat.skin.needsUpdate = true;
+
+  const forearm = addMesh(handRoot, new THREE.CylinderGeometry(0.365, 0.54, 2.18, 48, 2, false), mat.skin, "structure", [0.035, -3.52, -0.075], {
+    name: "Forearm anatomical reference", explode: [0, -0.27, -0.13]
+  });
+  forearm.geometry.computeVertexNormals();
+
+  [-2.7, -4.25].forEach(y => {
+    const t = clamp(Math.abs(y + 2.43) / 2.18, 0, 1);
+    const radius = 0.365 + t * (0.54 - 0.365);
+    addMesh(handRoot, new THREE.TorusGeometry(radius, 0.024, 10, 48), mat.graphite, "shell", [0.035, y, -0.075], {
+      rotation: [Math.PI / 2, 0, 0], explode: [0, -0.24, -0.13]
+    });
+    addMesh(handRoot, new THREE.TorusGeometry(radius + 0.008, 0.006, 8, 48), mat.shellDark, "shell", [0.035, y + 0.035, -0.075], {
+      rotation: [Math.PI / 2, 0, 0], explode: [0, -0.24, -0.13]
+    });
+  });
+
+  // Four electrode pods are shown on the forearm as in the reference image.
+  const pads = [
+    { name: "sEMG 1 · Flexor", x: -0.125, y: -2.82 },
+    { name: "sEMG 2 · Extensor", x: 0.125, y: -3.2 },
+    { name: "sEMG 3 · Auxiliary", x: -0.125, y: -3.58 },
+    { name: "sEMG 4 · Auxiliary", x: 0.125, y: -3.94 }
+  ];
+  pads.forEach((pad, index) => {
+    const t = clamp(Math.abs(pad.y + 2.43) / 2.18, 0, 1);
+    const radius = 0.365 + t * (0.54 - 0.365);
+    const z = -0.075 + Math.sqrt(Math.max(0, radius * radius - pad.x * pad.x)) + 0.015;
+    addMesh(handRoot, new THREE.CylinderGeometry(0.094, 0.094, 0.026, 28), mat.adhesive, "sensors", [pad.x, pad.y, z], {
+      rotation: [Math.PI / 2, 0, 0], name: pad.name + " adhesive electrode", explode: [-0.12, -0.18, 0.3]
+    });
+    addMesh(handRoot, new THREE.CylinderGeometry(0.059, 0.059, 0.018, 24), mat.shellDark, "sensors", [pad.x, pad.y, z + 0.019], {
+      rotation: [Math.PI / 2, 0, 0], name: pad.name + " electrode contact", explode: [-0.12, -0.18, 0.32]
+    });
+    addMesh(handRoot, new THREE.CylinderGeometry(0.027, 0.027, 0.014, 18), mat.graphite, "sensors", [pad.x, pad.y, z + 0.034], {
+      rotation: [Math.PI / 2, 0, 0], explode: [-0.12, -0.18, 0.34]
+    });
+    addMesh(handRoot, new THREE.CylinderGeometry(0.011, 0.011, 0.016, 12), mat.copper, "sensors", [pad.x, pad.y, z + 0.045], {
+      rotation: [Math.PI / 2, 0, 0], explode: [-0.12, -0.18, 0.35]
+    });
+
+    const boardX = 0.29;
+    const boardY = -4.02;
+    const boardZ = 0.455;
+    const xMid = (pad.x + boardX) * 0.5;
+    const yMid = (pad.y + boardY) * 0.5;
+    addLine(handRoot, [[pad.x,pad.y,z+0.05],[pad.x*0.75,yMid+0.08,z+0.075],[xMid,yMid,boardZ],[boardX,boardY+index*0.022,boardZ]], index % 2 ? mat.wireOrange : mat.wireTeal, "tendons", 0.009, [-0.12,-0.18,0.32]);
+  });
+
+  // EMG conditioning board and strain-relieved lead into the wrist controller.
+  const emgBoard = new THREE.Group();
+  emgBoard.position.set(0.29, -4.02, 0.455);
+  emgBoard.rotation.z = -0.12;
+  handRoot.add(emgBoard);
+  addMesh(emgBoard, new THREE.BoxGeometry(0.27, 0.42, 0.075), mat.pcb, "electronics", [0,0,0], {
+    name: "sEMG signal conditioning board", explode: [0.14,-0.2,0.32]
+  });
+  addMesh(emgBoard, new THREE.BoxGeometry(0.17,0.19,0.028), mat.pcbDark, "electronics", [0,0.025,0.052], {
+    explode: [0.14,-0.2,0.35]
+  });
+  addMesh(emgBoard, new THREE.BoxGeometry(0.1,0.035,0.022), mat.chip, "electronics", [0,-0.105,0.053], {
+    explode: [0.14,-0.2,0.35]
+  });
+  addMesh(emgBoard, new THREE.BoxGeometry(0.105,0.025,0.025), mat.shellAccent, "electronics", [0,0.175,0.045], {
+    explode: [0.14,-0.2,0.35]
+  });
+  addLine(handRoot, [[0.29,-3.82,0.5],[0.24,-3.38,0.49],[0.19,-2.9,0.46],[0.18,-2.5,0.42],[0.13,-2.2,0.42]], mat.cableDark, "tendons", 0.023, [0.1,-0.15,0.24]);
+  addLine(handRoot, [[0.29,-3.82,0.515],[0.24,-3.38,0.505],[0.19,-2.9,0.475],[0.18,-2.5,0.435],[0.13,-2.2,0.435]], mat.wireOrange, "tendons", 0.008, [0.1,-0.15,0.25]);
+}
+
 function createFingerTendonRoutes() {
   // External routing shows a plausible concept path from fingertip tracks back to each actuator.
   const paths = [
