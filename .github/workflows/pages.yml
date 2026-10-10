@@ -1,21 +1,17 @@
-name: Check and deploy NeuroGrip simulation
+name: Validate prosthetic hand simulation
 
 on:
   push:
+    branches: ["main"]
+  pull_request:
     branches: ["main"]
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
 
 jobs:
-  check-and-build:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -26,21 +22,3 @@ jobs:
           node-version: 22
       - name: Check JavaScript syntax
         run: npm run check
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
-      - name: Upload static site
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: check-and-build
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
