@@ -477,38 +477,6 @@ function createElectronics() {
     });
   }
 
-  // EMG breakout is a separate board on the radial side, connected to the forearm electrodes.
-  const emg = new THREE.Group();
-  emg.position.set(0.39, -1.9, 0.38);
-  emg.rotation.z = -0.12;
-  handRoot.add(emg);
-  addMesh(emg, new THREE.BoxGeometry(0.24, 0.3, 0.055), mat.pcb, "electronics", [0, 0, 0], {
-    name: "Conditioned sEMG sensor board", explode: [0.22, 0.03, 0.3]
-  });
-  addMesh(emg, new THREE.BoxGeometry(0.12, 0.12, 0.04), mat.pcbDark, "electronics", [0, 0.035, 0.04], {
-    explode: [0.22, 0.03, 0.3]
-  });
-  addMesh(emg, new THREE.CylinderGeometry(0.025, 0.025, 0.022, 16), mat.brass, "electronics", [0, -0.095, 0.05], {
-    rotation: [Math.PI / 2, 0, 0], explode: [0.22, 0.03, 0.3]
-  });
-
-  // Three electrode pads connected to sensor leads (conceptual fit on a forearm band).
-  const electrodePositions = [[-0.22, -1.88, 0.38], [-0.13, -1.7, 0.4], [-0.31, -1.7, 0.37]];
-  electrodePositions.forEach((p, index) => {
-    addMesh(handRoot, new THREE.CylinderGeometry(0.046, 0.046, 0.028, 20), index === 2 ? mat.copper : mat.shellAccent, "electronics", p, {
-      rotation: [Math.PI / 2, 0, 0], explode: [-0.16, 0.02, 0.3]
-    });
-    addMesh(handRoot, new THREE.CylinderGeometry(0.026, 0.026, 0.01, 16), mat.graphite, "electronics", [p[0], p[1], p[2] + 0.02], {
-      rotation: [Math.PI / 2, 0, 0], explode: [-0.16, 0.02, 0.3]
-    });
-    addLine(handRoot, [
-      [p[0], p[1], p[2] + 0.025],
-      [p[0] * 0.3, p[1] - 0.06, p[2] + 0.05],
-      [0.23, -1.93 + index * 0.022, 0.49],
-      [0.33, -1.92 + index * 0.02, 0.48]
-    ], index === 2 ? mat.cableDark : mat.wireTeal, "tendons", 0.009, [-0.05, 0.02, 0.27]);
-  });
-
   // Low-profile harness cable trunk from the board to the servo row.
   addLine(handRoot, [[0.14, -2.28, 0.48], [0.12, -1.98, 0.49], [0.1, -1.76, 0.47], [0.08, -1.62, 0.45]], mat.cableDark, "tendons", 0.026, [0.02, -0.1, 0.22]);
   [-0.015, 0.005, 0.025].forEach((dx, i) => {
@@ -698,14 +666,6 @@ function buildModel() {
   floor.receiveShadow = true;
   scene.add(floor);
 
-  // Subtle illuminated radial stand below the wrist.
-  const pedestal = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.68, 0.76, 0.065, 48),
-    new THREE.MeshStandardMaterial({ color: 0xdce5e8, roughness: 0.45, metalness: 0.15 })
-  );
-  pedestal.position.set(0, -2.61, -0.02);
-  handRoot.add(pedestal);
-
   makePalmShell();
   createFinger("index", "Index", -0.385, [0.49, 0.39, 0.31], 0.095, 0.02);
   createFinger("middle", "Middle", -0.125, [0.56, 0.43, 0.32], 0.103, 0.005);
@@ -719,7 +679,7 @@ function buildModel() {
   createFingerTendonRoutes();
 
   createLabel("ESP32 MOTOR CTRL", [-0.02, -2.3, 0.75], "#1d776d");
-  createLabel("4-CH sEMG", [0.66, -4.34, 0.61], "#1d776d");
+  createLabel("EMG ELECTRODES", [0.66, -4.34, 0.61], "#1d776d");
   createLabel("FINGERTIP FORCE", [0.78, 0.87, 0.39], "#95652f");
   createLabel("CAMERA MODULE", [-0.57, 0.05, 0.43], "#1d776d");
 
