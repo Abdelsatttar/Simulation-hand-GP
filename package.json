@@ -1,0 +1,10 @@
+{
+  "name": "neurogrip-prosthetic-hand-simulation",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Interactive Three.js digital twin and ESP32 sEMG starter firmware for a prosthetic hand graduation project.",
+  "scripts": {
+    "check": "node --check app.js"
+  }
+}
