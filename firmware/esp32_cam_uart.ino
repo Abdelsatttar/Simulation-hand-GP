@@ -1,97 +1,101 @@
 /*
  * NeuroGrip camera-side sketch — AI-Thinker ESP32-CAM + OV2640
  *
- * Board: "AI Thinker ESP32-CAM" in Arduino IDE.
- * Install ESP32 Arduino core (esp_camera.h is included with the board package).
+ * Select "AI Thinker ESP32-CAM" in Arduino IDE.
+ * The ESP32 Arduino package supplies esp_camera.h.
  *
- * This sketch initializes the camera and sends a UART heartbeat to the main
- * ESP32 DevKit. It DOES NOT run an object-detection model yet; it verifies the
- * camera module and communication link only. Connect the controller UART as:
+ * This sketch initializes the camera, periodically captures/releases a test
+ * frame, and sends UART health status to the main controller. It does not run
+ * object detection yet; the heartbeat confirms camera boot + serial wiring.
  *
- *   ESP32-CAM GPIO13 (TX2) -> main ESP32 GPIO16 (RX2)
- *   ESP32-CAM GPIO14 (RX2) <- main ESP32 GPIO17 (TX2)
- *   ESP32-CAM GND           -> main ESP32 GND
+ * ESP32-CAM UART2 (microSD must remain unused):
+ *   GPIO13 TX -> main ESP32 GPIO16 RX2
+ *   GPIO14 RX <- main ESP32 GPIO17 TX2
+ *   GND       -> main ESP32 GND
  *
- * Important: do not use the ESP32-CAM microSD interface while using GPIO13/14
- * for UART. Power the camera board from a stable 5 V supply with adequate
- * current. Camera ribbon/data pins stay local to the ESP32-CAM board.
+ * Power this board from a stable 5 V supply with adequate current.
+ * Camera data pins remain local to the ESP32-CAM board.
  */
 
-#include "esp_camera.h"
 #include <Arduino.h>
+#include "esp_camera.h"
 
 static const int CAMERA_UART_RX_PIN = 14;
 static const int CAMERA_UART_TX_PIN = 13;
 HardwareSerial LinkSerial(2);
 
-// AI-Thinker ESP32-CAM / OV2640 camera pin map.
-static camera_config_t cameraConfig = {
-  .ledc_channel = LEDC_CHANNEL_0,
-  .ledc_timer = LEDC_TIMER_0,
-  .pin_d0 = 5,
-  .pin_d1 = 18,
-  .pin_d2 = 19,
-  .pin_d3 = 21,
-  .pin_d4 = 36,
-  .pin_d5 = 39,
-  .pin_d6 = 34,
-  .pin_d7 = 35,
-  .pin_xclk = 0,
-  .pin_pclk = 22,
-  .pin_vsync = 25,
-  .pin_href = 23,
-  .pin_sccb_sda = 26,
-  .pin_sccb_scl = 27,
-  .pin_pwdn = 32,
-  .pin_reset = -1,
-  .xclk_freq_hz = 20000000,
-  .pixel_format = PIXFORMAT_JPEG,
-  .frame_size = FRAMESIZE_QVGA,
-  .jpeg_quality = 14,
-  .fb_count = 1,
-  .grab_mode = CAMERA_GRAB_WHEN_EMPTY,
-  .fb_location = CAMERA_FB_IN_PSRAM
-};
-
+camera_config_t cameraConfig;
 bool cameraReady = false;
 uint32_t lastHeartbeatMs = 0;
+uint32_t lastCaptureMs = 0;
+
+void configureCameraPins() {
+  cameraConfig.ledc_channel = LEDC_CHANNEL_0;
+  cameraConfig.ledc_timer = LEDC_TIMER_0;
+  cameraConfig.pin_d0 = 5;
+  cameraConfig.pin_d1 = 18;
+  cameraConfig.pin_d2 = 19;
+  cameraConfig.pin_d3 = 21;
+  cameraConfig.pin_d4 = 36;
+  cameraConfig.pin_d5 = 39;
+  cameraConfig.pin_d6 = 34;
+  cameraConfig.pin_d7 = 35;
+  cameraConfig.pin_xclk = 0;
+  cameraConfig.pin_pclk = 22;
+  cameraConfig.pin_vsync = 25;
+  cameraConfig.pin_href = 23;
+  cameraConfig.pin_sccb_sda = 26;
+  cameraConfig.pin_sccb_scl = 27;
+  cameraConfig.pin_pwdn = 32;
+  cameraConfig.pin_reset = -1;
+  cameraConfig.xclk_freq_hz = 20000000;
+  cameraConfig.pixel_format = PIXFORMAT_JPEG;
+  cameraConfig.frame_size = FRAMESIZE_QVGA;
+  cameraConfig.jpeg_quality = 14;
+  cameraConfig.fb_count = 1;
+  cameraConfig.grab_mode = CAMERA_GRAB_WHEN_EMPTY;
+  cameraConfig.fb_location = CAMERA_FB_IN_PSRAM;
+}
+
+void sendCameraStatus(const char *status) {
+  LinkSerial.print(F("CAM,STATUS="));
+  LinkSerial.println(status);
+  Serial.print(F("CAM,STATUS="));
+  Serial.println(status);
+}
 
 void setup() {
   Serial.begin(115200);
   LinkSerial.begin(115200, SERIAL_8N1, CAMERA_UART_RX_PIN, CAMERA_UART_TX_PIN);
   delay(250);
 
+  configureCameraPins();
   if (!psramFound()) {
-    Serial.println(F("Warning: PSRAM not detected; camera may have limited buffer options."));
+    Serial.println(F("Warning: PSRAM not detected; using DRAM framebuffer."));
     cameraConfig.fb_location = CAMERA_FB_IN_DRAM;
+    cameraConfig.frame_size = FRAMESIZE_QQVGA;
+    cameraConfig.fb_count = 1;
   }
 
   const esp_err_t err = esp_camera_init(&cameraConfig);
   cameraReady = (err == ESP_OK);
-
   if (cameraReady) {
-    Serial.println(F("OV2640 camera initialized."));
-    LinkSerial.println(F("CAM,STATUS=READY"));
+    sendCameraStatus("READY");
   } else {
     Serial.printf("Camera init failed: 0x%x\n", err);
-    LinkSerial.println(F("CAM,STATUS=ERROR"));
+    sendCameraStatus("ERROR");
   }
 }
 
 void loop() {
   const uint32_t now = millis();
+
   if (now - lastHeartbeatMs >= 500) {
     lastHeartbeatMs = now;
-    if (cameraReady) {
-      // Heartbeat proves camera boot + UART link, not object recognition.
-      LinkSerial.println(F("CAM,STATUS=READY"));
-    } else {
-      LinkSerial.println(F("CAM,STATUS=ERROR"));
-    }
+    sendCameraStatus(cameraReady ? "READY" : "ERROR");
   }
 
-  // Capture and release one frame periodically to verify the sensor is alive.
-  static uint32_t lastCaptureMs = 0;
+  // Frame capture is a basic camera-health check, not computer vision.
   if (cameraReady && now - lastCaptureMs >= 2000) {
     lastCaptureMs = now;
     camera_fb_t *frame = esp_camera_fb_get();
@@ -99,7 +103,7 @@ void loop() {
       esp_camera_fb_return(frame);
     } else {
       cameraReady = false;
-      LinkSerial.println(F("CAM,STATUS=ERROR"));
+      sendCameraStatus("ERROR");
       Serial.println(F("Camera frame capture failed."));
     }
   }
