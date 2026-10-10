@@ -27,7 +27,8 @@ const layerObjects = {
   servos: [],
   electronics: [],
   labels: [],
-  sensors: []
+  sensors: [],
+  forearm: []
 };
 const shellMaterials = [];
 const fingers = [];
@@ -557,12 +558,12 @@ function createForearmAndEmgPads() {
   mat.skin.bumpScale = 0.012;
   mat.skin.needsUpdate = true;
 
-  const forearm = addMesh(handRoot, new THREE.CylinderGeometry(0.365, 0.54, 2.18, 48, 2, false), mat.skin, "structure", [0.035, -3.52, -0.075], {
+  const forearm = addMesh(handRoot, new THREE.CylinderGeometry(0.365, 0.54, 2.18, 48, 2, false), mat.skin, "forearm", [0.035, -3.52, -0.075], {
     name: "Forearm anatomical reference", explode: [0, -0.27, -0.13]
   });
   forearm.geometry.computeVertexNormals();
   // Rounded distal forearm end avoids an unnatural flat cylinder cut-off.
-  addMesh(handRoot, new THREE.SphereGeometry(0.535, 32, 24), mat.skin, "structure", [0.035, -4.48, -0.075], {
+  addMesh(handRoot, new THREE.SphereGeometry(0.535, 32, 24), mat.skin, "forearm", [0.035, -4.48, -0.075], {
     scale: [1, 0.42, 1], name: "Rounded forearm end", explode: [0, -0.28, -0.13]
   });
 
