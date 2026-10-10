@@ -34,7 +34,8 @@
         <span class="mono">BUILD 01.0.0</span>
       </div>
       <div class="topbar-actions">
-        <span class="mode-pill"><span class="status-dot"></span> HARDWARE OFFLINE</span>
+        <button id="serial-connect" class="connect-button" title="Connect a physical ESP32 over USB serial"><span class="connect-glyph">↔</span> Connect ESP32</button>
+        <span class="mode-pill"><span class="status-dot"></span><span id="hardware-status">HARDWARE OFFLINE</span></span>
         <button id="reset-view" class="icon-button" title="Reset camera" aria-label="Reset camera">⟳</button>
       </div>
     </header>
@@ -137,7 +138,7 @@
       <section class="workspace-pane" id="signal-pane" data-pane="signal-pane">
         <div class="panel-page-grid">
           <article class="wide-panel signal-panel">
-            <div class="panel-heading"><div><span class="section-kicker">SIGNAL PROCESSING / 01</span><h2>Surface EMG monitor</h2><p>Generate a synthetic muscle-activity envelope to see how the grip command responds.</p></div><span class="signal-live"><i></i> SIMULATED STREAM</span></div>
+            <div class="panel-heading"><div><span class="section-kicker">SIGNAL PROCESSING / 01</span><h2>Surface EMG monitor</h2><p>Generate a synthetic muscle-activity envelope to see how the grip command responds.</p></div><span class="signal-live" id="signal-stream-status"><i></i> SIMULATED STREAM</span></div>
             <div class="chart-legend"><span><i class="legend-line"></i> EMG envelope</span><span><i class="legend-dash"></i> activation threshold</span><span class="mono" id="chart-sample-count">0 SAMPLES</span></div>
             <div class="large-chart-wrap"><canvas id="emg-chart" aria-label="EMG signal over time"></canvas></div>
             <div class="signal-stats-row">
