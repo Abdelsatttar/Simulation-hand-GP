@@ -269,3 +269,15 @@ h1 em{font-style:normal;color:#547180;font-weight:500}
 .layer-row:has(.swatch-sensors) .layer-swatch{box-shadow:0 0 0 3px rgba(43,137,219,.1)}
 .wiring-diagram{min-height:0}
 @media(max-width:600px){.wiring-diagram{min-height:0}.diagram-title{font-size:16px}}
+
+.pressure-section{padding-top:15px;padding-bottom:15px}
+.pressure-list{display:flex;flex-direction:column;gap:9px}
+.pressure-row{display:grid;grid-template-columns:52px minmax(50px,1fr) 34px;align-items:center;gap:8px;color:#536977;font-size:9px}
+.pressure-row output{font:8px var(--mono);text-align:right;color:#83949f}
+.pressure-track{height:5px;border-radius:6px;overflow:hidden;background:#eaf0f3}
+.pressure-track i{display:block;height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,#4caa9e,#e3a65f);transition:width .18s ease}
+#force-feedback-status{font-size:7px;letter-spacing:.1px}
+#wiring-pane .wiring-status.online{border-color:#bee6d4;background:#effaf4;color:#278b63}
+#wiring-pane .wiring-status.online i{background:#35b77b}
+#wiring-pane .wiring-status.offline{border-color:#e8dfcf;background:#fcf8f1;color:#a37a43}
+#wiring-pane .wiring-status.offline i{background:#d4a260}
