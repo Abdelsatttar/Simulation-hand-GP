@@ -784,6 +784,10 @@ function updateHardwareStatus(connected) {
     ? '<span class="connect-glyph">↔</span> Disconnect ESP32'
     : '<span class="connect-glyph">↔</span> Connect ESP32';
   $("#signal-stream-status").innerHTML = '<i></i> ' + (connected ? "LIVE ESP32 STREAM" : "SIMULATED STREAM");
+  $(".pose-card").forEach(card => {
+    card.disabled = connected;
+    card.title = connected ? "Gesture presets are disabled while live EMG controls the hand" : "";
+  });
   $("#emg-source-note").textContent = connected
     ? "Live USB serial input from ESP32. Voltage is an ADC estimate; verify calibration on your exact board."
     : "Synthetic signal for demonstration. Connect an ESP32 to view real sensor telemetry.";
@@ -814,7 +818,11 @@ function parseHardwareLine(line) {
     mode: values.mode || "AUTO"
   };
   hardwareMode = true;
-  displayedEmgLevel = clamp((latestHardware.voltage / 3.3) * 100, 0, 100);
+  const contractionDelta = Number.isFinite(latestHardware.filtered) && Number.isFinite(latestHardware.baseline)
+    ? latestHardware.filtered - latestHardware.baseline
+    : 0;
+  // Match the example firmware's 220-count activation threshold and 1500-count span.
+  displayedEmgLevel = clamp(((contractionDelta - 220) / 1500) * 100, 0, 100);
   applyGripAmount(latestHardware.grip, active ? "POSE: LIVE EMG GRIP" : "POSE: LIVE EMG / REST");
   addSignalSample(displayedEmgLevel);
   updateSignalReadouts();
