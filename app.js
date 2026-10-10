@@ -865,16 +865,14 @@ function updateHardwareStatus(connected) {
   $("#signal-stream-status").innerHTML = '<i></i> ' + (connected ? "LIVE ESP32 STREAM" : "SIMULATED STREAM");
   $$(".pose-card").forEach(card => {
     card.disabled = connected;
-    card.title = connected ? "Gesture presets are disabled while live EMG controls the hand" : "";
+    card.title = connected ? "Gesture presets are visual demos; live hardware follows EMG input" : "";
   });
   $("#emg-source-note").textContent = connected
-    ? "USB serial connected. Waiting for four-channel EMG telemetry from the main ESP32."
-    : "Synthetic signal until USB connection. Live firmware reads four conditioned EMG envelope channels.";
+    ? "USB serial connected. Live four-channel EMG data is coming from the main ESP32."
+    : "Synthetic signal until USB connection. Live mode reads four conditioned EMG envelope channels.";
   $("#simulate-flex").innerHTML = connected ? "Resume EMG control <span>↗</span>" : 'Simulate contraction <span>↗</span>';
   $("#simulate-rest").textContent = connected ? "Force open" : "Rest";
-  if (!connected) {
-    latestHardware = null;
-    }
+  if (!connected) latestHardware = null;
 }
 
 function parseHardwareLine(line) {
@@ -885,20 +883,15 @@ function parseHardwareLine(line) {
     if (separator < 1) return;
     values[part.slice(0, separator).trim()] = part.slice(separator + 1).trim();
   });
-  const voltage = Number(values.env_est_V);
-  const grip = Number(values.grip);
-  const active = Number(values.active) === 1;
-  if (!Number.isFinite(grip)) return;
 
-  const force = [1, 2, 3, 4, 5].map(i => {
-    const value = Number(values["force" + i]);
-    return Number.isFinite(value) ? clamp(value, 0, 1) : null;
-  });
+  const grip = Number(values.grip);
+  if (!Number.isFinite(grip)) return;
+  const voltage = Number(values.env_est_V);
+  const level = Number(values.level);
   const emg = [1, 2, 3, 4].map(i => {
     const value = Number(values["emg" + i]);
     return Number.isFinite(value) ? clamp(value, 0, 1) : null;
   });
-  const level = Number(values.level);
 
   latestHardware = {
     raw: Number(values.raw),
@@ -906,22 +899,19 @@ function parseHardwareLine(line) {
     baseline: Number(values.baseline),
     voltage: Number.isFinite(voltage) ? voltage : 0,
     grip: clamp(grip, 0, 1),
-    active,
-    force,
+    active: Number(values.active) === 1,
     emg,
     level: Number.isFinite(level) ? clamp(level, 0, 100) : null,
-    forceReady: Number(values.forceReady) === 1,
-    camera: Number(values.camera) === 1,
     mode: values.mode || "AUTO"
   };
   hardwareMode = true;
-  const contractionDelta = Number.isFinite(latestHardware.filtered) && Number.isFinite(latestHardware.baseline)
+  const delta = Number.isFinite(latestHardware.filtered) && Number.isFinite(latestHardware.baseline)
     ? latestHardware.filtered - latestHardware.baseline
     : 0;
   displayedEmgLevel = Number.isFinite(latestHardware.level)
     ? latestHardware.level
-    : clamp(((contractionDelta - 95) / 950) * 100, 0, 100);
-  applyGripAmount(latestHardware.grip, active ? "POSE: LIVE EMG GRIP" : "POSE: LIVE EMG / REST");
+    : clamp(((delta - 95) / 950) * 100, 0, 100);
+  applyGripAmount(latestHardware.grip, latestHardware.active ? "POSE: LIVE EMG GRIP" : "POSE: LIVE EMG / REST");
   addSignalSample(displayedEmgLevel);
   updateSignalReadouts();
   if ($("#signal-pane").classList.contains("active")) drawSignalChart();
