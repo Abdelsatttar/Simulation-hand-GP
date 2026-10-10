@@ -9,8 +9,8 @@ const mount = $("#three-root");
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xeaf0f3);
 const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100);
-camera.position.set(4.1, 0.75, 7.3);
-camera.lookAt(0, -0.15, 0);
+camera.position.set(3.25, -0.1, 10.4);
+camera.lookAt(0, -1.05, 0);
 
 let renderer;
 let controls;
@@ -603,10 +603,10 @@ function initRenderer() {
   controls.dampingFactor = 0.07;
   controls.enablePan = true;
   controls.minDistance = 4.2;
-  controls.maxDistance = 12.5;
+  controls.maxDistance = 15.5;
   controls.minPolarAngle = 0.25;
   controls.maxPolarAngle = Math.PI * 0.88;
-  controls.target.set(0, -0.2, 0);
+  controls.target.set(0, -1.05, 0);
   controls.update();
   const resize = () => {
     const width = Math.max(1, mount.clientWidth);
@@ -1061,8 +1061,8 @@ function setActivePane(target) {
 }
 
 function resetCamera() {
-  camera.position.set(4.1, 0.75, 7.3);
-  controls.target.set(0, -0.2, 0);
+  camera.position.set(3.25, -0.1, 10.4);
+  controls.target.set(0, -1.05, 0);
   controls.update();
 }
 
