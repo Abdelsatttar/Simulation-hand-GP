@@ -26,7 +26,8 @@ const layerObjects = {
   tendons: [],
   servos: [],
   electronics: [],
-  labels: []
+  labels: [],
+  sensors: []
 };
 const shellMaterials = [];
 const fingers = [];
@@ -73,7 +74,11 @@ const mat = {
   copper: new THREE.MeshStandardMaterial({ color: 0xbe8158, roughness: 0.3, metalness: 0.7 }),
   wireTeal: new THREE.MeshStandardMaterial({ color: 0x29b9a9, roughness: 0.38, metalness: 0.1 }),
   wireOrange: new THREE.MeshStandardMaterial({ color: 0xe39e51, roughness: 0.38, metalness: 0.08 }),
-  white: new THREE.MeshStandardMaterial({ color: 0xf5f7f8, roughness: 0.3, metalness: 0.08 })
+  white: new THREE.MeshStandardMaterial({ color: 0xf5f7f8, roughness: 0.3, metalness: 0.08 }),
+  skin: new THREE.MeshPhysicalMaterial({ color: 0xc18a6b, roughness: 0.78, metalness: 0.0, clearcoat: 0.03, clearcoatRoughness: 0.8 }),
+  adhesive: new THREE.MeshStandardMaterial({ color: 0xe5dcd0, roughness: 0.95, metalness: 0.0 }),
+  sensorGlass: new THREE.MeshPhysicalMaterial({ color: 0x193d59, roughness: 0.16, metalness: 0.35, clearcoat: 0.9 }),
+  sensorBlue: new THREE.MeshStandardMaterial({ color: 0x287fe5, roughness: 0.28, metalness: 0.45 })
 };
 
 function addToLayer(parent, object, layer, explodeVector = [0, 0, 0]) {
@@ -274,7 +279,10 @@ function createFinger(key, label, x, lengths, radius, baseAngle = 0) {
     });
 
     // Tendon remains visible inside the phalanx and follows articulation.
-    addLine(segmentParent, [[0, 0.07, 0.07], [0, length * 0.34, 0.085], [0, length * 0.7, 0.085], [0, length - 0.06, 0.07]], mat.tendon, "tendons", 0.009, [0.045, 0.01, 0.28]);
+    addLine(segmentParent, [[0, 0.07, 0.078], [0, length * 0.34, 0.093], [0, length * 0.7, 0.093], [0, length - 0.08, 0.078]], mat.tendon, "tendons", 0.009, [0.045, 0.01, 0.28]);
+    // Two thin service leads follow each phalanx like real actuator/sensor wiring.
+    addLine(segmentParent, [[-segmentRadius * 0.62, 0.045, 0.068], [-segmentRadius * 0.62, length * 0.42, 0.09], [-segmentRadius * 0.5, length - 0.045, 0.08]], mat.cableDark, "tendons", 0.009, [0.05, 0.01, 0.3]);
+    addLine(segmentParent, [[segmentRadius * 0.62, 0.045, 0.068], [segmentRadius * 0.62, length * 0.42, 0.09], [segmentRadius * 0.5, length - 0.045, 0.08]], mat.wireOrange, "tendons", 0.007, [0.05, 0.01, 0.3]);
 
     if (index < lengths.length - 1) {
       const joint = new THREE.Group();
@@ -291,6 +299,19 @@ function createFinger(key, label, x, lengths, radius, baseAngle = 0) {
     } else {
       addMesh(segmentParent, new THREE.SphereGeometry(segmentRadius * 0.74, 16, 12), mat.bone, "structure", [0, length * 0.9, -0.06], {
         scale: [0.82, 0.7, 0.65], explode: [-0.025, 0, -0.27]
+      });
+      // Fingertip force/pressure sensor: adhesive foot, metal rim and blue contact window.
+      addMesh(segmentParent, new THREE.CylinderGeometry(segmentRadius * 0.70, segmentRadius * 0.70, 0.026, 24), mat.graphite, "sensors", [0, length - 0.055, 0.102], {
+        rotation: [Math.PI / 2, 0, 0], name: label + " pressure sensor base", explode: [0.04, 0.02, 0.31]
+      });
+      addMesh(segmentParent, new THREE.CylinderGeometry(segmentRadius * 0.55, segmentRadius * 0.55, 0.012, 24), mat.brass, "sensors", [0, length - 0.055, 0.121], {
+        rotation: [Math.PI / 2, 0, 0], explode: [0.04, 0.02, 0.31]
+      });
+      addMesh(segmentParent, new THREE.BoxGeometry(segmentRadius * 0.72, 0.04, 0.012), mat.sensorGlass, "sensors", [0, length - 0.055, 0.131], {
+        name: label + " force sensing surface", explode: [0.04, 0.02, 0.31]
+      });
+      addMesh(segmentParent, new THREE.BoxGeometry(segmentRadius * 0.21, 0.016, 0.007), mat.sensorBlue, "sensors", [0, length - 0.055, 0.14], {
+        explode: [0.04, 0.02, 0.31]
       });
     }
   });
@@ -337,6 +358,17 @@ function createThumb() {
       });
       joints.push(joint);
       segmentParent = joint;
+    }
+    if (index === lengths.length - 1) {
+      addMesh(segmentParent, new THREE.CylinderGeometry(0.058, 0.058, 0.025, 24), mat.graphite, "sensors", [0, length - 0.045, 0.105], {
+        rotation: [Math.PI / 2, 0, 0], name: "Thumb pressure sensor", explode: [-0.08, 0.04, 0.31]
+      });
+      addMesh(segmentParent, new THREE.CylinderGeometry(0.042, 0.042, 0.012, 24), mat.brass, "sensors", [0, length - 0.045, 0.124], {
+        rotation: [Math.PI / 2, 0, 0], explode: [-0.08, 0.04, 0.31]
+      });
+      addMesh(segmentParent, new THREE.BoxGeometry(0.055, 0.035, 0.012), mat.sensorGlass, "sensors", [0, length - 0.045, 0.134], {
+        name: "Thumb force sensing window", explode: [-0.08, 0.04, 0.31]
+      });
     }
   });
   addMesh(root, new THREE.SphereGeometry(0.13, 20, 16), mat.joint, "structure", [0, 0, -0.04], { explode: [-0.07, 0.02, -0.28] });
