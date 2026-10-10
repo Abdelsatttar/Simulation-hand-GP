@@ -44,22 +44,22 @@
       <section class="intro-row">
         <div>
           <div class="eyebrow"><span class="eyebrow-line"></span> GRADUATION PROJECT / 2026–2027</div>
-          <h1>Human intention.<br><em>Mechanical precision.</em></h1>
-          <p class="intro-copy">Explore the hand, trace the signal, understand every connection.</p>
+          <h1>Muscle signal in.<br><em>Precision motion out.</em></h1>
+          <p class="intro-copy">sEMG electrodes → ESP32 controller → servo-driven fingers, with fingertip pressure sensing and a back-of-hand camera.</p>
         </div>
         <div class="project-meta">
-          <div><span class="meta-label">CONTROLLER</span><strong>ESP32 DEVKIT</strong></div>
-          <div><span class="meta-label">INPUT</span><strong>sEMG ENVELOPE</strong></div>
-          <div><span class="meta-label">ACTUATORS</span><strong>5 SERVO CHANNELS</strong></div>
+          <div><span class="meta-label">CONTROL</span><strong>ESP32 + EMG</strong></div>
+          <div><span class="meta-label">FEEDBACK</span><strong>FINGERTIP PRESSURE</strong></div>
+          <div><span class="meta-label">MOTION</span><strong>5 SERVO DRIVES</strong></div>
         </div>
       </section>
 
       <nav class="main-tabs" aria-label="Simulation views">
-        <button class="main-tab active" data-pane-target="hand-pane"><span class="tab-index">01</span> 3D WORKBENCH <span class="tab-arrow">↗</span></button>
-        <button class="main-tab" data-pane-target="signal-pane"><span class="tab-index">02</span> EMG SIGNAL LAB</button>
-        <button class="main-tab" data-pane-target="wiring-pane"><span class="tab-index">03</span> WIRING & PINOUT</button>
+        <button class="main-tab active" data-pane-target="hand-pane"><span class="tab-index">01</span> HAND ASSEMBLY <span class="tab-arrow">↗</span></button>
+        <button class="main-tab" data-pane-target="signal-pane"><span class="tab-index">02</span> EMG & CONTROL</button>
+        <button class="main-tab" data-pane-target="wiring-pane"><span class="tab-index">03</span> WIRING MAP</button>
         <span class="tabs-spacer"></span>
-        <span class="view-note"><span class="view-note-dot"></span> INTERACTIVE CONCEPT MODEL</span>
+        <span class="view-note"><span class="view-note-dot"></span> EMG → ESP32 → SERVO</span>
       </nav>
 
       <section class="workspace-pane active" id="hand-pane" data-pane="hand-pane">
@@ -84,9 +84,7 @@
                 <strong>3D viewport could not start</strong>
                 <span>Check your connection to the Three.js CDN and open the page through a local web server.</span>
               </div>
-              <div class="callout callout-controller"><span class="callout-number">01</span><span>ESP32<br><small>CONTROL BOARD</small></span><i></i></div>
-              <div class="callout callout-actuator"><span class="callout-number">02</span><span>MICRO SERVO<br><small>ACTUATION</small></span><i></i></div>
-              <div class="callout callout-tendon"><span class="callout-number">03</span><span>TENDON ROUTE<br><small>FLEX CABLES</small></span><i></i></div>
+              
             </div>
             <div class="viewport-footer">
               <div class="model-stats"><span class="stat-icon">◈</span><span><b id="visible-parts">42</b><small>VISIBLE COMPONENTS</small></span></div>
@@ -120,17 +118,18 @@
             </div>
 
             <div class="inspector-section layers-section">
-              <div class="section-line"><span>03 / ASSEMBLY LAYERS</span><button id="show-all-layers" class="tiny-action">SHOW ALL</button></div>
+              <div class="section-line"><span>03 / SYSTEM COMPONENTS</span><button id="show-all-layers" class="tiny-action">SHOW ALL</button></div>
               <div class="layer-list">
                 <label class="layer-row"><span class="layer-swatch swatch-shell"></span><span><b>Outer shell</b><small>Printed polymer panels</small></span><input type="checkbox" data-layer="shell" checked><i class="custom-check"></i></label>
                 <label class="layer-row"><span class="layer-swatch swatch-frame"></span><span><b>Internal frame</b><small>Joint supports & bones</small></span><input type="checkbox" data-layer="structure" checked><i class="custom-check"></i></label>
                 <label class="layer-row"><span class="layer-swatch swatch-tendon"></span><span><b>Tendons & cables</b><small>Pull-wire routing</small></span><input type="checkbox" data-layer="tendons" checked><i class="custom-check"></i></label>
                 <label class="layer-row"><span class="layer-swatch swatch-servo"></span><span><b>Servo drives</b><small>5 actuator channels</small></span><input type="checkbox" data-layer="servos" checked><i class="custom-check"></i></label>
-                <label class="layer-row"><span class="layer-swatch swatch-electronics"></span><span><b>Control electronics</b><small>ESP32 + sEMG board</small></span><input type="checkbox" data-layer="electronics" checked><i class="custom-check"></i></label>
-                <label class="layer-row"><span class="layer-swatch swatch-labels"></span><span><b>Annotations</b><small>Component callouts</small></span><input type="checkbox" data-layer="labels" checked><i class="custom-check"></i></label>
+                <label class="layer-row"><span class="layer-swatch swatch-electronics"></span><span><b>Controller & EMG boards</b><small>ESP32 + signal conditioning</small></span><input type="checkbox" data-layer="electronics" checked><i class="custom-check"></i></label>
+                <label class="layer-row"><span class="layer-swatch swatch-sensors"></span><span><b>Camera & pressure sensors</b><small>Lens module + 5 fingertip pads</small></span><input type="checkbox" data-layer="sensors" checked><i class="custom-check"></i></label>
+                <label class="layer-row"><span class="layer-swatch swatch-labels"></span><span><b>Annotations</b><small>Assembly identification</small></span><input type="checkbox" data-layer="labels" checked><i class="custom-check"></i></label>
               </div>
             </div>
-            <div class="inspector-bottom"><span class="safe-icon">ⓘ</span><p><b>Prototype mode</b><br>Motion is illustrative. Force limits and mechanical safety need real-world validation.</p></div>
+            <div class="inspector-bottom"><span class="safe-icon">ⓘ</span><p><b>Hardware concept</b><br>Forearm EMG input commands the servos. Pressure pads and camera are shown as system hardware; their data acquisition needs board-specific wiring.</p></div>
           </aside>
         </div>
       </section>
@@ -206,7 +205,7 @@
 
       <section class="bottom-strip">
         <div class="bottom-mark"><span class="brand-symbol tiny-brand"><span></span><span></span><span></span></span></div>
-        <div><b>BUILT FOR EXPLORATION.</b><span>A concept digital twin for an AI-powered myoelectric prosthetic hand.</span></div>
+        <div><b>DESIGNED AS A CONNECTED SYSTEM.</b><span>Forearm EMG, ESP32 control, servo drives, fingertip pressure and camera.</span></div>
         <div class="bottom-right"><span>ENGINEERING PROTOTYPE</span><i></i><span>NOT A MEDICAL DEVICE</span></div>
       </section>
     </main>
