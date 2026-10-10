@@ -27,7 +27,7 @@ const layerObjects = {
   servos: [],
   electronics: [],
   labels: [],
-  sensors: [],
+  emg: [],
   forearm: []
 };
 const shellMaterials = [];
@@ -301,19 +301,7 @@ function createFinger(key, label, x, lengths, radius, baseAngle = 0) {
       addMesh(segmentParent, new THREE.SphereGeometry(segmentRadius * 0.74, 16, 12), mat.bone, "structure", [0, length * 0.9, -0.06], {
         scale: [0.82, 0.7, 0.65], explode: [-0.025, 0, -0.27]
       });
-      // Fingertip force/pressure sensor: adhesive foot, metal rim and blue contact window.
-      addMesh(segmentParent, new THREE.CylinderGeometry(segmentRadius * 0.70, segmentRadius * 0.70, 0.026, 24), mat.graphite, "sensors", [0, length - 0.055, 0.102], {
-        rotation: [Math.PI / 2, 0, 0], name: label + " pressure sensor base", explode: [0.04, 0.02, 0.31]
-      });
-      addMesh(segmentParent, new THREE.CylinderGeometry(segmentRadius * 0.55, segmentRadius * 0.55, 0.012, 24), mat.brass, "sensors", [0, length - 0.055, 0.121], {
-        rotation: [Math.PI / 2, 0, 0], explode: [0.04, 0.02, 0.31]
-      });
-      addMesh(segmentParent, new THREE.BoxGeometry(segmentRadius * 0.72, 0.04, 0.012), mat.sensorGlass, "sensors", [0, length - 0.055, 0.131], {
-        name: label + " force sensing surface", explode: [0.04, 0.02, 0.31]
-      });
-      addMesh(segmentParent, new THREE.BoxGeometry(segmentRadius * 0.21, 0.016, 0.007), mat.sensorBlue, "sensors", [0, length - 0.055, 0.14], {
-        explode: [0.04, 0.02, 0.31]
-      });
+
     }
   });
 
@@ -359,17 +347,6 @@ function createThumb() {
       });
       joints.push(joint);
       segmentParent = joint;
-    }
-    if (index === lengths.length - 1) {
-      addMesh(segmentParent, new THREE.CylinderGeometry(0.058, 0.058, 0.025, 24), mat.graphite, "sensors", [0, length - 0.045, 0.105], {
-        rotation: [Math.PI / 2, 0, 0], name: "Thumb pressure sensor", explode: [-0.08, 0.04, 0.31]
-      });
-      addMesh(segmentParent, new THREE.CylinderGeometry(0.042, 0.042, 0.012, 24), mat.brass, "sensors", [0, length - 0.045, 0.124], {
-        rotation: [Math.PI / 2, 0, 0], explode: [-0.08, 0.04, 0.31]
-      });
-      addMesh(segmentParent, new THREE.BoxGeometry(0.055, 0.035, 0.012), mat.sensorGlass, "sensors", [0, length - 0.045, 0.134], {
-        name: "Thumb force sensing window", explode: [-0.08, 0.04, 0.31]
-      });
     }
   });
   addMesh(root, new THREE.SphereGeometry(0.13, 20, 16), mat.joint, "structure", [0, 0, -0.04], { explode: [-0.07, 0.02, -0.28] });
@@ -485,43 +462,6 @@ function createElectronics() {
   });
 }
 
-function createHandCamera() {
-  const module = new THREE.Group();
-  module.name = "Back-of-hand camera module";
-  module.position.set(0.015, 0.22, 0.245);
-  handRoot.add(module);
-  addMesh(module, new THREE.BoxGeometry(0.46, 0.38, 0.045), mat.pcb, "sensors", [0, 0, 0], {
-    name: "Camera PCB", explode: [0.02, 0.1, 0.35]
-  });
-  addMesh(module, new THREE.BoxGeometry(0.33, 0.28, 0.036), mat.graphite, "sensors", [0, 0, 0.027], {
-    explode: [0.02, 0.1, 0.35]
-  });
-  // Lens barrel, metal bezel and blue optical glass, all separate selectable meshes.
-  addMesh(module, new THREE.CylinderGeometry(0.118, 0.135, 0.092, 32), mat.graphite, "sensors", [0, 0.012, 0.085], {
-    rotation: [Math.PI / 2, 0, 0], name: "Camera lens barrel", explode: [0.02, 0.1, 0.37]
-  });
-  addMesh(module, new THREE.CylinderGeometry(0.095, 0.108, 0.022, 32), mat.shellDark, "sensors", [0, 0.012, 0.14], {
-    rotation: [Math.PI / 2, 0, 0], explode: [0.02, 0.1, 0.39]
-  });
-  addMesh(module, new THREE.CylinderGeometry(0.074, 0.082, 0.012, 32), mat.sensorGlass, "sensors", [0, 0.012, 0.155], {
-    rotation: [Math.PI / 2, 0, 0], name: "Optical lens", explode: [0.02, 0.1, 0.4]
-  });
-  addMesh(module, new THREE.CylinderGeometry(0.026, 0.026, 0.014, 24), mat.sensorBlue, "sensors", [0, 0.012, 0.165], {
-    rotation: [Math.PI / 2, 0, 0], explode: [0.02, 0.1, 0.41]
-  });
-  [[-0.185,-0.14,0.04],[0.185,-0.14,0.04],[-0.185,0.14,0.04],[0.185,0.14,0.04]].forEach(p => {
-    addMesh(module, new THREE.CylinderGeometry(0.012, 0.012, 0.012, 12), mat.brass, "sensors", p, {
-      rotation: [Math.PI / 2, 0, 0], explode: [0.02, 0.1, 0.35]
-    });
-  });
-  addMesh(module, new THREE.BoxGeometry(0.025, 0.018, 0.008), mat.wireTeal, "sensors", [-0.16, 0.13, 0.053], {
-    explode: [0.02, 0.1, 0.35]
-  });
-  // Camera ribbon leads route back into the wrist controller.
-  addLine(handRoot, [[0.21,0.12,0.25],[0.27,-0.08,0.25],[0.25,-0.39,0.26],[0.17,-0.72,0.29],[0.12,-1.03,0.34]], mat.cableDark, "tendons", 0.025, [0.02,0.05,0.3]);
-  addLine(handRoot, [[0.205,0.12,0.27],[0.29,-0.08,0.27],[0.27,-0.39,0.28],[0.19,-0.72,0.31],[0.14,-1.03,0.36]], mat.wireTeal, "tendons", 0.008, [0.02,0.05,0.31]);
-}
-
 function createForearmAndEmgPads() {
   // Human-forearm reference shape with procedural skin grain, behind the prosthetic wrist.
   const skinCanvas = document.createElement("canvas");
@@ -589,16 +529,16 @@ function createForearmAndEmgPads() {
     const t = clamp(Math.abs(pad.y + 2.43) / 2.18, 0, 1);
     const radius = 0.365 + t * (0.54 - 0.365);
     const z = -0.075 + Math.sqrt(Math.max(0, radius * radius - pad.x * pad.x)) + 0.015;
-    addMesh(handRoot, new THREE.CylinderGeometry(0.094, 0.094, 0.026, 28), mat.adhesive, "sensors", [pad.x, pad.y, z], {
+    addMesh(handRoot, new THREE.CylinderGeometry(0.094, 0.094, 0.026, 28), mat.adhesive, "emg", [pad.x, pad.y, z], {
       rotation: [Math.PI / 2, 0, 0], name: pad.name + " adhesive electrode", explode: [-0.12, -0.18, 0.3]
     });
-    addMesh(handRoot, new THREE.CylinderGeometry(0.059, 0.059, 0.018, 24), mat.shellDark, "sensors", [pad.x, pad.y, z + 0.019], {
+    addMesh(handRoot, new THREE.CylinderGeometry(0.059, 0.059, 0.018, 24), mat.shellDark, "emg", [pad.x, pad.y, z + 0.019], {
       rotation: [Math.PI / 2, 0, 0], name: pad.name + " electrode contact", explode: [-0.12, -0.18, 0.32]
     });
-    addMesh(handRoot, new THREE.CylinderGeometry(0.027, 0.027, 0.014, 18), mat.graphite, "sensors", [pad.x, pad.y, z + 0.034], {
+    addMesh(handRoot, new THREE.CylinderGeometry(0.027, 0.027, 0.014, 18), mat.graphite, "emg", [pad.x, pad.y, z + 0.034], {
       rotation: [Math.PI / 2, 0, 0], explode: [-0.12, -0.18, 0.34]
     });
-    addMesh(handRoot, new THREE.CylinderGeometry(0.011, 0.011, 0.016, 12), mat.copper, "sensors", [pad.x, pad.y, z + 0.045], {
+    addMesh(handRoot, new THREE.CylinderGeometry(0.011, 0.011, 0.016, 12), mat.copper, "emg", [pad.x, pad.y, z + 0.045], {
       rotation: [Math.PI / 2, 0, 0], explode: [-0.12, -0.18, 0.35]
     });
 
@@ -680,13 +620,11 @@ function buildModel() {
   createActuatorsAndCuff();
   createElectronics();
   createForearmAndEmgPads();
-  createHandCamera();
   createFingerTendonRoutes();
 
   createLabel("ESP32 MOTOR CTRL", [-0.02, -2.3, 0.75], "#1d776d");
   createLabel("EMG ELECTRODES", [0.66, -4.34, 0.61], "#1d776d");
-  createLabel("FINGERTIP FORCE", [0.78, 0.87, 0.39], "#95652f");
-  createLabel("CAMERA MODULE", [-0.57, 0.05, 0.43], "#1d776d");
+
 
   // Slight natural yaw gives the shell and joint depth.
   handRoot.rotation.y = -0.12;
@@ -874,34 +812,6 @@ function setRangeFill(input) {
   input.style.background = "linear-gradient(to right, #177f77 0%, #42c5b4 " + percent + "%, #e3eaee " + percent + "%, #e3eaee 100%)";
 }
 
-function updateForceReadouts() {
-  const names = ["index", "middle", "ring", "little", "thumb"];
-  const liveValues = hardwareMode && latestHardware && Array.isArray(latestHardware.force)
-    ? latestHardware.force
-    : [null, null, null, null, null];
-  names.forEach((name, index) => {
-    const value = liveValues[index];
-    const fill = $("#force-" + name);
-    const output = $("#force-" + name + "-value");
-    if (fill) fill.style.width = Number.isFinite(value) ? (clamp(value, 0, 1) * 100) + "%" : "0%";
-    if (output) output.textContent = Number.isFinite(value) ? Math.round(clamp(value, 0, 1) * 100) + "%" : "—";
-  });
-  const status = $("#force-feedback-status");
-  if (status) {
-    if (!hardwareMode || !latestHardware) status.textContent = "NO LIVE DATA";
-    else status.textContent = latestHardware.forceReady ? "ADC LIVE" : "CHECK ADC";
-  }
-
-  const cameraStatus = $("#camera-link-status");
-  if (cameraStatus) {
-    const live = Boolean(hardwareMode && latestHardware && latestHardware.camera);
-    const adcReady = Boolean(hardwareMode && latestHardware && latestHardware.forceReady);
-    cameraStatus.classList.toggle("online", live && adcReady);
-    cameraStatus.classList.toggle("offline", !live || !adcReady);
-    cameraStatus.innerHTML = '<i></i> CAM ' + (live ? "ONLINE" : "OFFLINE") + " · FSR " + (adcReady ? "READY" : "CHECK");
-  }
-}
-
 function updateSignalReadouts() {
   const level = displayedEmgLevel;
   if (hardwareMode && latestHardware) {
@@ -935,7 +845,6 @@ function updateSignalReadouts() {
   $("#threshold-slider").disabled = hardwareMode;
   $("#emg-auto").disabled = hardwareMode;
   $$(".range-control").forEach(input => input.classList.toggle("hardware-locked", hardwareMode));
-  updateForceReadouts();
 }
 
 function handleEmgInput(value) {
@@ -959,14 +868,13 @@ function updateHardwareStatus(connected) {
     card.title = connected ? "Gesture presets are disabled while live EMG controls the hand" : "";
   });
   $("#emg-source-note").textContent = connected
-    ? "USB serial connected. Waiting for four-channel EMG, five pressure readings and camera-link telemetry."
+    ? "USB serial connected. Waiting for four-channel EMG telemetry from the main ESP32."
     : "Synthetic signal until USB connection. Live firmware reads four conditioned EMG envelope channels.";
   $("#simulate-flex").innerHTML = connected ? "Resume EMG control <span>↗</span>" : 'Simulate contraction <span>↗</span>';
   $("#simulate-rest").textContent = connected ? "Force open" : "Rest";
   if (!connected) {
     latestHardware = null;
-    updateForceReadouts();
-  }
+    }
 }
 
 function parseHardwareLine(line) {
