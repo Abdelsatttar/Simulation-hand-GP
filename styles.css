@@ -161,7 +161,7 @@ h1 em{font-style:normal;color:#547180;font-weight:500}
 .layer-row b{font-size:10px;font-weight:600;color:#3d5260}
 .layer-row small{font-size:8px;color:#9aa7b0}
 .layer-swatch{width:8px;height:8px;border-radius:2px;flex:0 0 auto}
-.swatch-shell{background:#cbd8de}.swatch-frame{background:#7f9aa6}.swatch-tendon{background:#e0a25c}.swatch-servo{background:#3f7dab}.swatch-electronics{background:#34bca8}.swatch-sensors{background:#2b89db}.swatch-labels{background:#9fadb5}
+.swatch-shell{background:#cbd8de}.swatch-frame{background:#7f9aa6}.swatch-tendon{background:#e0a25c}.swatch-servo{background:#3f7dab}.swatch-electronics{background:#34bca8}.swatch-sensors{background:#2b89db}.swatch-forearm{background:#c18a6b}.swatch-labels{background:#9fadb5}
 .layer-row input{position:absolute;opacity:0;right:0;width:16px;height:16px;cursor:pointer}
 .custom-check{position:relative;display:block;width:15px;height:15px;border:1px solid #cbd6dc;border-radius:4px;margin-right:3px;background:#fff}
 .layer-row input:checked+.custom-check{background:#218f84;border-color:#218f84}
