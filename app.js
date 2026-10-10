@@ -8,8 +8,8 @@ const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const mount = $("#three-root");
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xeaf0f3);
-const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100);
-camera.position.set(3.25, -0.1, 10.4);
+const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+camera.position.set(3.25, -0.1, 11.3);
 camera.lookAt(0, -1.05, 0);
 
 let renderer;
@@ -561,6 +561,10 @@ function createForearmAndEmgPads() {
     name: "Forearm anatomical reference", explode: [0, -0.27, -0.13]
   });
   forearm.geometry.computeVertexNormals();
+  // Rounded distal forearm end avoids an unnatural flat cylinder cut-off.
+  addMesh(handRoot, new THREE.SphereGeometry(0.535, 32, 24), mat.skin, "structure", [0.035, -4.48, -0.075], {
+    scale: [1, 0.42, 1], name: "Rounded forearm end", explode: [0, -0.28, -0.13]
+  });
 
   [-2.7, -4.25].forEach(y => {
     const t = clamp(Math.abs(y + 2.43) / 2.18, 0, 1);
@@ -1214,7 +1218,7 @@ function setActivePane(target) {
 }
 
 function resetCamera() {
-  camera.position.set(3.25, -0.1, 10.4);
+  camera.position.set(3.25, -0.1, 11.3);
   controls.target.set(0, -1.05, 0);
   controls.update();
 }
