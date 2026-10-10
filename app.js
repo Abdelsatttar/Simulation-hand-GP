@@ -625,7 +625,7 @@ function setPose(name) {
   servoHorns.forEach((horn, index) => {
     if (horn) horn.rotation.z = horn.userData.baseHornRotationZ + servoPose[index] * 0.9;
   });
-  $$(".pose-card").forEach(card => {
+  $$$(".pose-card").forEach(card => {
     const selected = card.dataset.pose === name;
     card.classList.toggle("selected", selected);
     card.setAttribute("aria-pressed", String(selected));
@@ -660,7 +660,7 @@ function applyGripAmount(amount, statusLabel = "POSE: PROPORTIONAL GRIP") {
   servoHorns.forEach((horn, index) => {
     if (horn) horn.rotation.z = horn.userData.baseHornRotationZ + amount * (index === 4 ? 0.78 : 0.92);
   });
-  $$(".pose-card").forEach(card => {
+  $$$(".pose-card").forEach(card => {
     card.classList.remove("selected");
     card.setAttribute("aria-pressed", "false");
   });
@@ -759,13 +759,13 @@ function updateSignalReadouts() {
   $("#emg-slider-value").textContent = Math.round(level);
   $("#emg-slider").value = Math.round(hardwareMode ? level : baseEmgLevel);
   $("#emg-slider-large").value = Math.round(hardwareMode ? level : baseEmgLevel);
-  $(".range-control").forEach(input => {
+  $$(".range-control").forEach(input => {
     input.disabled = hardwareMode && input.id !== "threshold-slider";
     setRangeFill(input);
   });
   $("#threshold-slider").disabled = hardwareMode;
   $("#emg-auto").disabled = hardwareMode;
-  $(".range-control").forEach(input => input.classList.toggle("hardware-locked", hardwareMode));
+  $$(".range-control").forEach(input => input.classList.toggle("hardware-locked", hardwareMode));
 }
 
 function handleEmgInput(value) {
@@ -1028,7 +1028,7 @@ function resetCamera() {
 
 function bindUi() {
   $$(".main-tab").forEach(button => button.addEventListener("click", () => setActivePane(button.dataset.paneTarget)));
-  $$(".pose-card").forEach(button => button.addEventListener("click", () => {
+  $$$(".pose-card").forEach(button => button.addEventListener("click", () => {
     setPose(button.dataset.pose);
     if (button.dataset.pose !== "open") baseEmgLevel = Math.max(baseEmgLevel, button.dataset.pose === "fist" ? 85 : 53);
     else baseEmgLevel = 8;
@@ -1090,7 +1090,7 @@ function bindUi() {
     handleEmgInput(4);
   });
   window.addEventListener("resize", drawSignalChart);
-  $(".range-control").forEach(setRangeFill);
+  $$(".range-control").forEach(setRangeFill);
   updateHardwareStatus(false);
 }
 
