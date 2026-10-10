@@ -869,6 +869,34 @@ function setRangeFill(input) {
   input.style.background = "linear-gradient(to right, #177f77 0%, #42c5b4 " + percent + "%, #e3eaee " + percent + "%, #e3eaee 100%)";
 }
 
+function updateForceReadouts() {
+  const names = ["index", "middle", "ring", "little", "thumb"];
+  const liveValues = hardwareMode && latestHardware && Array.isArray(latestHardware.force)
+    ? latestHardware.force
+    : [null, null, null, null, null];
+  names.forEach((name, index) => {
+    const value = liveValues[index];
+    const fill = $("#force-" + name);
+    const output = $("#force-" + name + "-value");
+    if (fill) fill.style.width = Number.isFinite(value) ? (clamp(value, 0, 1) * 100) + "%" : "0%";
+    if (output) output.textContent = Number.isFinite(value) ? Math.round(clamp(value, 0, 1) * 100) + "%" : "—";
+  });
+  const status = $("#force-feedback-status");
+  if (status) {
+    if (!hardwareMode || !latestHardware) status.textContent = "NO LIVE DATA";
+    else status.textContent = latestHardware.forceReady ? "ADC LIVE" : "CHECK ADC";
+  }
+
+  const cameraStatus = $("#camera-link-status");
+  if (cameraStatus) {
+    const live = Boolean(hardwareMode && latestHardware && latestHardware.camera);
+    const adcReady = Boolean(hardwareMode && latestHardware && latestHardware.forceReady);
+    cameraStatus.classList.toggle("online", live && adcReady);
+    cameraStatus.classList.toggle("offline", !live || !adcReady);
+    cameraStatus.innerHTML = '<i></i> CAM ' + (live ? "ONLINE" : "OFFLINE") + " · FSR " + (adcReady ? "READY" : "CHECK");
+  }
+}
+
 function updateSignalReadouts() {
   const level = displayedEmgLevel;
   if (hardwareMode && latestHardware) {
@@ -902,6 +930,7 @@ function updateSignalReadouts() {
   $("#threshold-slider").disabled = hardwareMode;
   $("#emg-auto").disabled = hardwareMode;
   $$(".range-control").forEach(input => input.classList.toggle("hardware-locked", hardwareMode));
+  updateForceReadouts();
 }
 
 function handleEmgInput(value) {
@@ -920,15 +949,19 @@ function updateHardwareStatus(connected) {
     ? '<span class="connect-glyph">↔</span> Disconnect ESP32'
     : '<span class="connect-glyph">↔</span> Connect ESP32';
   $("#signal-stream-status").innerHTML = '<i></i> ' + (connected ? "LIVE ESP32 STREAM" : "SIMULATED STREAM");
-  $(".pose-card").forEach(card => {
+  $$(".pose-card").forEach(card => {
     card.disabled = connected;
     card.title = connected ? "Gesture presets are disabled while live EMG controls the hand" : "";
   });
   $("#emg-source-note").textContent = connected
-    ? "Live USB serial input from ESP32. Voltage is an ADC estimate; verify calibration on your exact board."
-    : "Synthetic signal for demonstration. Connect an ESP32 to view real sensor telemetry.";
+    ? "USB serial connected. Waiting for four-channel EMG, five pressure readings and camera-link telemetry."
+    : "Synthetic signal until USB connection. Live firmware reads four conditioned EMG envelope channels.";
   $("#simulate-flex").innerHTML = connected ? "Resume EMG control <span>↗</span>" : 'Simulate contraction <span>↗</span>';
   $("#simulate-rest").textContent = connected ? "Force open" : "Rest";
+  if (!connected) {
+    latestHardware = null;
+    updateForceReadouts();
+  }
 }
 
 function parseHardwareLine(line) {
@@ -944,6 +977,16 @@ function parseHardwareLine(line) {
   const active = Number(values.active) === 1;
   if (!Number.isFinite(grip)) return;
 
+  const force = [1, 2, 3, 4, 5].map(i => {
+    const value = Number(values["force" + i]);
+    return Number.isFinite(value) ? clamp(value, 0, 1) : null;
+  });
+  const emg = [1, 2, 3, 4].map(i => {
+    const value = Number(values["emg" + i]);
+    return Number.isFinite(value) ? clamp(value, 0, 1) : null;
+  });
+  const level = Number(values.level);
+
   latestHardware = {
     raw: Number(values.raw),
     filtered: Number(values.filtered),
@@ -951,14 +994,20 @@ function parseHardwareLine(line) {
     voltage: Number.isFinite(voltage) ? voltage : 0,
     grip: clamp(grip, 0, 1),
     active,
+    force,
+    emg,
+    level: Number.isFinite(level) ? clamp(level, 0, 100) : null,
+    forceReady: Number(values.forceReady) === 1,
+    camera: Number(values.camera) === 1,
     mode: values.mode || "AUTO"
   };
   hardwareMode = true;
   const contractionDelta = Number.isFinite(latestHardware.filtered) && Number.isFinite(latestHardware.baseline)
     ? latestHardware.filtered - latestHardware.baseline
     : 0;
-  // Match the example firmware's 220-count activation threshold and 1500-count span.
-  displayedEmgLevel = clamp(((contractionDelta - 220) / 1500) * 100, 0, 100);
+  displayedEmgLevel = Number.isFinite(latestHardware.level)
+    ? latestHardware.level
+    : clamp(((contractionDelta - 95) / 950) * 100, 0, 100);
   applyGripAmount(latestHardware.grip, active ? "POSE: LIVE EMG GRIP" : "POSE: LIVE EMG / REST");
   addSignalSample(displayedEmgLevel);
   updateSignalReadouts();
