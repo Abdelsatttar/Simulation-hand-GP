@@ -45,12 +45,12 @@
         <div>
           <div class="eyebrow"><span class="eyebrow-line"></span> GRADUATION PROJECT / 2026–2027</div>
           <h1>Muscle signal in.<br><em>Precision motion out.</em></h1>
-          <p class="intro-copy">sEMG electrodes → ESP32 controller → servo-driven fingers, with fingertip pressure sensing and a back-of-hand camera.</p>
+          <p class="intro-copy">Four conditioned EMG channels on the forearm → ESP32 controller → five servo-driven fingers.</p>
         </div>
         <div class="project-meta">
-          <div><span class="meta-label">CONTROL</span><strong>ESP32 + EMG</strong></div>
-          <div><span class="meta-label">FEEDBACK</span><strong>FINGERTIP PRESSURE</strong></div>
-          <div><span class="meta-label">MOTION</span><strong>5 SERVO DRIVES</strong></div>
+          <div><span class="meta-label">INPUT</span><strong>4 × EMG ENV</strong></div>
+          <div><span class="meta-label">CONTROLLER</span><strong>ESP32 DEVKIT</strong></div>
+          <div><span class="meta-label">OUTPUT</span><strong>5 SERVO DRIVES</strong></div>
         </div>
       </section>
 
@@ -117,18 +117,6 @@
               <p class="micro-note" id="emg-source-note">Synthetic signal until USB connection. Live firmware reads four conditioned EMG envelope channels.</p>
             </div>
 
-            <div class="inspector-section pressure-section">
-              <div class="section-line"><span>03 / FINGERTIP PRESSURE</span><span id="force-feedback-status" class="mono muted">NO LIVE DATA</span></div>
-              <div class="pressure-list">
-                <div class="pressure-row"><span>Index</span><div class="pressure-track"><i id="force-index"></i></div><output id="force-index-value">—</output></div>
-                <div class="pressure-row"><span>Middle</span><div class="pressure-track"><i id="force-middle"></i></div><output id="force-middle-value">—</output></div>
-                <div class="pressure-row"><span>Ring</span><div class="pressure-track"><i id="force-ring"></i></div><output id="force-ring-value">—</output></div>
-                <div class="pressure-row"><span>Little</span><div class="pressure-track"><i id="force-little"></i></div><output id="force-little-value">—</output></div>
-                <div class="pressure-row"><span>Thumb</span><div class="pressure-track"><i id="force-thumb"></i></div><output id="force-thumb-value">—</output></div>
-              </div>
-              <p class="micro-note">Values are normalized ADC readings, not force in newtons. Calibrate each FSR after mounting.</p>
-            </div>
-
             <div class="inspector-section layers-section">
               <div class="section-line"><span>04 / SYSTEM COMPONENTS</span><button id="show-all-layers" class="tiny-action">SHOW ALL</button></div>
               <div class="layer-list">
@@ -137,12 +125,12 @@
                 <label class="layer-row"><span class="layer-swatch swatch-tendon"></span><span><b>Tendons & cables</b><small>Pull-wire routing</small></span><input type="checkbox" data-layer="tendons" checked><i class="custom-check"></i></label>
                 <label class="layer-row"><span class="layer-swatch swatch-servo"></span><span><b>Servo drives</b><small>5 actuator channels</small></span><input type="checkbox" data-layer="servos" checked><i class="custom-check"></i></label>
                 <label class="layer-row"><span class="layer-swatch swatch-electronics"></span><span><b>Controller & EMG boards</b><small>ESP32 + signal conditioning</small></span><input type="checkbox" data-layer="electronics" checked><i class="custom-check"></i></label>
-                <label class="layer-row"><span class="layer-swatch swatch-sensors"></span><span><b>Camera & pressure sensors</b><small>Lens module + 5 fingertip pads</small></span><input type="checkbox" data-layer="sensors" checked><i class="custom-check"></i></label>
+                <label class="layer-row"><span class="layer-swatch swatch-electronics"></span><span><b>Forearm EMG electrodes</b><small>Four conditioned envelope channels</small></span><input type="checkbox" data-layer="emg" checked><i class="custom-check"></i></label>
                 <label class="layer-row"><span class="layer-swatch swatch-forearm"></span><span><b>Forearm surface</b><small>Skin reference + EMG placement</small></span><input type="checkbox" data-layer="forearm" checked><i class="custom-check"></i></label>
                 <label class="layer-row"><span class="layer-swatch swatch-labels"></span><span><b>Annotations</b><small>Assembly identification</small></span><input type="checkbox" data-layer="labels" checked><i class="custom-check"></i></label>
               </div>
             </div>
-            <div class="inspector-bottom"><span class="safe-icon">ⓘ</span><p><b>System status</b><br>Four EMG envelopes command the servos. Five FSRs are read over I²C ADCs; the camera module reports its UART heartbeat separately.</p></div>
+            <div class="inspector-bottom"><span class="safe-icon">ⓘ</span><p><b>Core signal path</b><br>Four conditioned EMG envelope outputs enter the ESP32 ADC. The controller uses flexor/extensor activity to command five servo channels.</p></div>
           </aside>
         </div>
       </section>
@@ -177,26 +165,26 @@
       <section class="workspace-pane" id="wiring-pane" data-pane="wiring-pane">
         <div class="wiring-page">
           <article class="wide-panel wiring-main">
-            <div class="panel-heading"><div><span class="section-kicker">HARDWARE / 01</span><h2>Wiring architecture</h2><p>ESP32 DevKit + four conditioned EMG channels + five servos + five FSRs + an ESP32-CAM link.</p></div><span class="wiring-status" id="camera-link-status"><i></i> CAMERA / ADC WAITING</span></div>
+            <div class="panel-heading"><div><span class="section-kicker">HARDWARE / 01</span><h2>Wiring architecture</h2><p>Four conditioned EMG envelope outputs → ESP32 ADC inputs → five servo PWM outputs.</p></div><span class="wiring-status"><i></i> CORE EMG / SERVO PATH</span></div>
             <div class="wiring-diagram-wrap">
-              <svg class="wiring-diagram" viewBox="0 0 1000 610" role="img" aria-labelledby="wire-title wire-desc">
-                <title id="wire-title">EMG, ESP32, servo and prosthetic sensor connection architecture</title>
-                <desc id="wire-desc">Four conditioned EMG envelope channels enter ADC1 pins 34, 35, 32 and 33. Five FSRs connect through two ADS1115 modules on GPIO21/22 I²C. Five servo PWM outputs use GPIO13, 14, 25, 26 and 27. An AI-Thinker ESP32-CAM links over UART2. External servo power and common ground are required.</desc>
+              <svg class="wiring-diagram" viewBox="0 0 1000 480" role="img" aria-labelledby="wire-title wire-desc">
+                <title id="wire-title">Four-channel EMG to ESP32 to five-servo wiring</title>
+                <desc id="wire-desc">Four conditioned EMG envelope outputs connect to the ADC1 pins 34, 35, 32 and 33 of a classic ESP32 DevKit. Five servo signal wires use GPIO 13, 14, 25, 26 and 27. Servos use a separate regulated supply and common ground.</desc>
                 <defs><pattern id="wire-grid" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0V24" fill="none" stroke="#263749" stroke-width=".8" opacity=".45"/></pattern></defs>
-                <rect width="1000" height="610" rx="18" fill="#0b1624"/><rect width="1000" height="610" rx="18" fill="url(#wire-grid)"/>
-                <g><rect x="28" y="45" width="255" height="188" rx="13" fill="#172a38" stroke="#3a8f84" stroke-width="1.4"/><text x="49" y="75" class="diagram-kicker green">FOREARM INPUT / 01</text><text x="49" y="103" class="diagram-title">sEMG electrodes</text>
-                  <g fill="#e8e0d3" stroke="#9fb6c2"><circle cx="62" cy="133" r="11"/><circle cx="96" cy="133" r="11"/><circle cx="130" cy="133" r="11"/><circle cx="164" cy="133" r="11"/></g><g fill="#243947"><circle cx="62" cy="133" r="4"/><circle cx="96" cy="133" r="4"/><circle cx="130" cy="133" r="4"/><circle cx="164" cy="133" r="4"/></g><text x="49" y="169" class="diagram-small">Conditioned EMG envelope → ADC</text><text x="49" y="190" class="diagram-small">4 ENV channels → ADC1 pins</text><text x="49" y="212" class="diagram-small">GPIO 34 · 35 · 32 · 33</text></g>
-                <g><rect x="28" y="300" width="255" height="184" rx="13" fill="#1c2634" stroke="#5a89c5" stroke-width="1.4"/><text x="49" y="330" class="diagram-kicker">FINGERTIP FEEDBACK / 02</text><text x="49" y="359" class="diagram-title">5 × force sensors</text><g fill="#2b4e61" stroke="#8baab9"><rect x="49" y="380" width="27" height="22" rx="5"/><rect x="82" y="380" width="27" height="22" rx="5"/><rect x="115" y="380" width="27" height="22" rx="5"/><rect x="148" y="380" width="27" height="22" rx="5"/><rect x="181" y="380" width="27" height="22" rx="5"/></g><text x="49" y="432" class="diagram-small">FSRs → 2 × ADS1115</text><text x="49" y="453" class="diagram-small">I²C: GPIO 21 SDA / 22 SCL</text><text x="49" y="474" class="diagram-small">ADDR 0x48 / 0x49</text></g>
-                <g><rect x="350" y="135" width="300" height="286" rx="14" fill="#12382f" stroke="#2e9a7b" stroke-width="1.6"/><text x="375" y="168" class="diagram-kicker green">CORE CONTROLLER / 03</text><text x="375" y="198" class="diagram-title">ESP32 DevKit</text><rect x="390" y="216" width="220" height="48" rx="7" fill="#14232d" stroke="#5a7889"/><text x="500" y="245" text-anchor="middle" class="diagram-pin">ESP32-WROOM MCU</text><text x="375" y="294" class="diagram-kicker">INPUT</text><rect x="375" y="306" width="240" height="30" rx="5" fill="#1c5145"/><text x="495" y="326" text-anchor="middle" class="diagram-pin">EMG ADC1 · GPIO 34/35/32/33</text><text x="375" y="363" class="diagram-kicker">FIVE SERVO PWM</text><text x="375" y="386" class="diagram-small">GPIO 13 · 14 · 25 · 26 · 27</text><text x="375" y="408" class="diagram-small">I²C 21/22 · UART2 16/17</text></g>
-                <g><rect x="719" y="45" width="253" height="188" rx="13" fill="#18312b" stroke="#55b87a" stroke-width="1.4"/><text x="741" y="75" class="diagram-kicker green">VISION / 04</text><text x="741" y="103" class="diagram-title">ESP32-CAM / OV2640</text><rect x="744" y="122" width="60" height="47" rx="7" fill="#233c43" stroke="#80afa8"/><circle cx="774" cy="145" r="15" fill="#101b28" stroke="#b5d7d4" stroke-width="3"/><circle cx="774" cy="145" r="7" fill="#235f91" stroke="#4b9feb"/><text x="821" y="139" class="diagram-small">Camera board</text><text x="821" y="157" class="diagram-small">TX13 / RX14*</text><text x="741" y="190" class="diagram-small">Main UART2: RX16 / TX17</text><text x="741" y="211" class="diagram-small">*No microSD; common GND</text></g>
-                <g><rect x="719" y="285" width="253" height="155" rx="13" fill="#2b2831" stroke="#bc8a4a" stroke-width="1.4"/><text x="741" y="315" class="diagram-kicker amber">MOTION / 05</text><text x="741" y="344" class="diagram-title">5 × servo motors</text><g fill="#254254" stroke="#6597a8"><rect x="741" y="361" width="33" height="31" rx="5"/><rect x="781" y="361" width="33" height="31" rx="5"/><rect x="821" y="361" width="33" height="31" rx="5"/><rect x="861" y="361" width="33" height="31" rx="5"/><rect x="901" y="361" width="33" height="31" rx="5"/></g><text x="741" y="414" class="diagram-small">PWM signals + external servo power</text></g>
-                <g><rect x="350" y="472" width="300" height="100" rx="13" fill="#242a35" stroke="#7890a2" stroke-width="1.2"/><text x="375" y="501" class="diagram-kicker">POWER / 06</text><text x="375" y="529" class="diagram-title">Regulated 5–6 V supply</text><text x="375" y="552" class="diagram-small">Size for servo stall-current sum</text><text x="375" y="568" class="diagram-small">PSU GND ↔ ESP32 GND</text></g>
-                <path d="M283 160H319V321H375" fill="none" stroke="#50c7bc" stroke-width="3" stroke-linecap="round"/><path d="M283 392H319V349H350" fill="none" stroke="#6ca3e7" stroke-width="2.3" stroke-dasharray="6 6"/><path d="M650 382H683V377H719" fill="none" stroke="#e8a35d" stroke-width="2.7" stroke-linecap="round"/><path d="M500 421V472" fill="none" stroke="#c5d1dd" stroke-width="2.3" stroke-dasharray="6 6"/><path d="M845 233V257H684V279H650" fill="none" stroke="#64c988" stroke-width="2.2" stroke-dasharray="6 6"/>
-                <rect x="293" y="119" width="75" height="24" rx="5" fill="#113e40"/><text x="330" y="135" text-anchor="middle" class="diagram-pin">ENV → ADC</text><rect x="659" y="351" width="72" height="22" rx="5" fill="#48301f"/><text x="695" y="366" text-anchor="middle" class="diagram-pin">5 × PWM</text><text x="665" y="258" class="diagram-small">UART2 camera link</text>
-                <g transform="translate(38 584)"><circle cx="7" cy="0" r="4" fill="#50c7bc"/><text x="20" y="4" class="diagram-small">Core firmware path</text><circle cx="190" cy="0" r="4" fill="#6ca3e7"/><text x="203" y="4" class="diagram-small">I²C pressure + UART camera data</text></g>
+                <rect width="1000" height="480" rx="18" fill="#0b1624"/><rect width="1000" height="480" rx="18" fill="url(#wire-grid)"/>
+                <g><rect x="32" y="70" width="246" height="280" rx="13" fill="#172a38" stroke="#3a8f84" stroke-width="1.5"/><text x="55" y="104" class="diagram-kicker green">FOREARM INPUT / 01</text><text x="55" y="134" class="diagram-title">sEMG ENV signals</text>
+                  <g fill="#e8e0d3" stroke="#9fb6c2"><circle cx="73" cy="170" r="13"/><circle cx="73" cy="215" r="13"/><circle cx="73" cy="260" r="13"/><circle cx="73" cy="305" r="13"/></g><g fill="#243947"><circle cx="73" cy="170" r="5"/><circle cx="73" cy="215" r="5"/><circle cx="73" cy="260" r="5"/><circle cx="73" cy="305" r="5"/></g>
+                  <text x="100" y="175" class="diagram-pin">EMG 1 · Flexor</text><text x="100" y="220" class="diagram-pin">EMG 2 · Extensor</text><text x="100" y="265" class="diagram-pin">EMG 3 · Auxiliary</text><text x="100" y="310" class="diagram-pin">EMG 4 · Auxiliary</text><text x="55" y="333" class="diagram-small">Conditioned envelope output only</text></g>
+                <g><rect x="370" y="85" width="278" height="260" rx="14" fill="#12382f" stroke="#2e9a7b" stroke-width="1.6"/><text x="394" y="119" class="diagram-kicker green">CONTROL / 02</text><text x="394" y="151" class="diagram-title">ESP32 DevKit</text><rect x="394" y="170" width="230" height="45" rx="7" fill="#14232d" stroke="#5a7889"/><text x="509" y="197" text-anchor="middle" class="diagram-pin">ESP32-WROOM MCU</text><text x="394" y="244" class="diagram-kicker">ADC INPUTS</text><text x="394" y="267" class="diagram-small">GPIO 34 · 35 · 32 · 33</text><text x="394" y="298" class="diagram-kicker">FIVE SERVO PWM</text><text x="394" y="322" class="diagram-small">GPIO 13 · 14 · 25 · 26 · 27</text></g>
+                <g><rect x="739" y="70" width="228" height="202" rx="13" fill="#2b2831" stroke="#bc8a4a" stroke-width="1.5"/><text x="760" y="104" class="diagram-kicker amber">ACTUATION / 03</text><text x="760" y="136" class="diagram-title">5 × servo motors</text><g fill="#254254" stroke="#6597a8"><rect x="760" y="158" width="32" height="30" rx="5"/><rect x="800" y="158" width="32" height="30" rx="5"/><rect x="840" y="158" width="32" height="30" rx="5"/><rect x="880" y="158" width="32" height="30" rx="5"/><rect x="920" y="158" width="27" height="30" rx="5"/></g><text x="760" y="213" class="diagram-small">Index · middle · ring</text><text x="760" y="232" class="diagram-small">Little · thumb</text><text x="760" y="253" class="diagram-small">One PWM line per servo</text></g>
+                <g><rect x="370" y="382" width="278" height="70" rx="12" fill="#242a35" stroke="#7890a2" stroke-width="1.2"/><text x="394" y="410" class="diagram-kicker">POWER / 04</text><text x="394" y="434" class="diagram-pin">External regulated 5–6 V* supply</text><text x="394" y="448" class="diagram-small">Supply GND connects to ESP32 GND</text></g>
+                <path d="M278 170H322V249H370" fill="none" stroke="#50c7bc" stroke-width="2.4" stroke-linecap="round"/><path d="M278 215H336V255H370" fill="none" stroke="#50c7bc" stroke-width="2.4" stroke-linecap="round"/><path d="M278 260H345V261H370" fill="none" stroke="#50c7bc" stroke-width="2.4" stroke-linecap="round"/><path d="M278 305H355V267H370" fill="none" stroke="#50c7bc" stroke-width="2.4" stroke-linecap="round"/>
+                <path d="M648 307H695V176H739" fill="none" stroke="#e8a35d" stroke-width="2.7" stroke-linecap="round"/><path d="M509 345V382" fill="none" stroke="#c5d1dd" stroke-width="2.3" stroke-dasharray="6 6"/>
+                <rect x="291" y="127" width="91" height="23" rx="5" fill="#113e40"/><text x="336" y="143" text-anchor="middle" class="diagram-pin">4 × ADC</text><rect x="661" y="275" width="80" height="22" rx="5" fill="#48301f"/><text x="701" y="290" text-anchor="middle" class="diagram-pin">5 × PWM</text>
+                <g transform="translate(40 425)"><circle cx="7" cy="0" r="4" fill="#50c7bc"/><text x="20" y="4" class="diagram-small">Conditioned EMG signal</text><circle cx="208" cy="0" r="4" fill="#e8a35d"/><text x="221" y="4" class="diagram-small">Servo control signal</text><circle cx="410" cy="0" r="4" fill="#c5d1dd"/><text x="423" y="4" class="diagram-small">Power / common ground</text></g>
               </svg>
             </div>
-            <div class="diagram-caption"><span class="caption-mark">!</span><p><b>Power and board notes:</b> use four conditioned EMG ENV outputs (not raw electrode signals); fit one 10 kΩ divider per FSR and two ADS1115 boards at addresses 0x48 and 0x49. The camera sketch assumes an AI-Thinker ESP32-CAM with microSD unused. Feed servos from a separate regulated supply sized for stall current, and connect all grounds together.</p></div>
+            <div class="diagram-caption"><span class="caption-mark">!</span><p><b>Core wiring:</b> use conditioned EMG ENV outputs, not raw electrodes. Confirm every signal stays within the ESP32 ADC input range. Power the servos from a separate regulated supply sized for the selected motors’ stall current, and connect the servo-supply ground, EMG ground and ESP32 GND together. Never power five servos from the ESP32 3.3 V pin.</p></div>
           </article>
           <aside class="wide-panel pinout-panel">
             <div class="panel-heading"><div><span class="section-kicker">PIN MAP / 02</span><h2>Connection schedule</h2></div></div>
@@ -211,24 +199,19 @@
               <div class="pin-row"><span><i class="pin-dot servo-pin"></i><b>Ring servo</b><small>PWM signal</small></span><code>GPIO 25</code></div>
               <div class="pin-row"><span><i class="pin-dot servo-pin"></i><b>Little servo</b><small>PWM signal</small></span><code>GPIO 26</code></div>
               <div class="pin-row"><span><i class="pin-dot servo-pin"></i><b>Thumb servo</b><small>PWM signal</small></span><code>GPIO 27</code></div>
-              <div class="pin-row"><span><i class="pin-dot power-pin"></i><b>Pressure FSRs ×5</b><small>2 × ADS1115 ADC boards</small></span><code>I²C 21 / 22</code></div>
-              <div class="pin-row"><span><i class="pin-dot power-pin"></i><b>ADS1115 addresses</b><small>ADDR to GND / 3V3</small></span><code>0x48 / 0x49</code></div>
-              <div class="pin-row"><span><i class="pin-dot emg-pin"></i><b>Main ESP32 UART2</b><small>RX from camera TX / TX to RX</small></span><code>GPIO 16 / 17</code></div>
-              <div class="pin-row"><span><i class="pin-dot emg-pin"></i><b>AI-Thinker ESP32-CAM</b><small>UART2 pins; microSD unused</small></span><code>TX 13 / RX 14</code></div>
-              <div class="pin-row"><span><i class="pin-dot power-pin"></i><b>Camera power</b><small>Regulated 5 V supply</small></span><code>5 V + GND</code></div>
+              
               <div class="pin-row"><span><i class="pin-dot ground-pin"></i><b>All grounds</b><small>Sensor + MCU + servo PSU</small></span><code>COMMON GND</code></div>
               <div class="pin-row"><span><i class="pin-dot power-pin"></i><b>Servo power</b><small>External regulated supply</small></span><code>5–6 V*</code></div>
             </div>
-            <a class="download-firmware" href="firmware/esp32_hand.ino" download><span>↓</span><div><b>Main ESP32 firmware</b><small>4 EMG channels · servos · force ADC · camera UART</small></div><span class="download-arrow">↗</span></a>
-            <a class="download-firmware" href="firmware/esp32_cam_uart.ino" download><span>↓</span><div><b>ESP32-CAM firmware</b><small>OV2640 health check + UART heartbeat</small></div><span class="download-arrow">↗</span></a>
-            <p class="micro-note">*Starter pin map targets a classic ESP32 DevKit + AI-Thinker ESP32-CAM with microSD unused. Calibrate each FSR and servo, check all board revisions, and confirm the servo supply's current rating before powering the mechanism. Camera vision inference is not part of the UART health-check sketch.</p>
+            <a class="download-firmware" href="firmware/esp32_hand.ino" download><span>↓</span><div><b>Main ESP32 firmware</b><small>4 EMG channels · 5 servo outputs · USB telemetry</small></div><span class="download-arrow">↗</span></a>
+<p class="micro-note">*Starter pin map targets a classic ESP32 DevKit and four compatible conditioned EMG envelope outputs. Calibrate each EMG channel and servo travel, check your board revision, and confirm servo-supply current capacity before powering the mechanism.</p>
           </aside>
         </div>
       </section>
 
       <section class="bottom-strip">
         <div class="bottom-mark"><span class="brand-symbol tiny-brand"><span></span><span></span><span></span></span></div>
-        <div><b>DESIGNED AS A CONNECTED SYSTEM.</b><span>Forearm EMG, ESP32 control, servo drives, fingertip pressure and camera.</span></div>
+        <div><b>DESIGNED AS A CONNECTED SYSTEM.</b><span>Four forearm EMG channels, ESP32 control and five servo drives.</span></div>
         <div class="bottom-right"><span>ENGINEERING PROTOTYPE</span><i></i><span>NOT A MEDICAL DEVICE</span></div>
       </section>
     </main>
