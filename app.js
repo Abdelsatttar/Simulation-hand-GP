@@ -45,6 +45,12 @@ let sampleCount = 0;
 let lastUiPaint = 0;
 let latestVoltage = 0.40;
 let latestGrip = 0;
+let hardwareMode = false;
+let serialConnected = false;
+let serialPort = null;
+let serialReader = null;
+let serialWriter = null;
+let latestHardware = null;
 const clock = new THREE.Clock();
 
 const mat = {
@@ -619,8 +625,13 @@ function setPose(name) {
 }
 
 function setProportionalGrip(level) {
-  currentPose = "emg";
   const amount = clamp((level - thresholdLevel) / Math.max(1, 100 - thresholdLevel), 0, 1);
+  applyGripAmount(amount, level < thresholdLevel ? "POSE: REST / OPEN" : "POSE: PROPORTIONAL GRIP");
+}
+
+function applyGripAmount(amount, statusLabel = "POSE: PROPORTIONAL GRIP") {
+  currentPose = "emg";
+  amount = clamp(amount, 0, 1);
   latestGrip = Math.round(amount * 100);
   fingers.forEach(finger => {
     let baseFlex = 0.12 * amount;
@@ -634,12 +645,12 @@ function setProportionalGrip(level) {
     finger.root.rotation.z = finger.baseAngle + baseFlex;
     finger.joints.forEach((joint, index) => joint.rotation.z = index === 0 ? first : second);
   });
-  $$(".pose-card").forEach(card => {
+  $(".pose-card").forEach(card => {
     card.classList.remove("selected");
     card.setAttribute("aria-pressed", "false");
   });
-  $("#pose-status-label").textContent = level < thresholdLevel ? "POSE: REST / OPEN" : "POSE: PROPORTIONAL GRIP";
-  $("#pose-status").style.background = level < thresholdLevel ? "#2fbca9" : "#dfa05d";
+  $("#pose-status-label").textContent = statusLabel;
+  $("#pose-status").style.background = amount < 0.04 ? "#2fbca9" : "#dfa05d";
   $("#grip-value").textContent = latestGrip + "%";
 }
 
@@ -709,24 +720,37 @@ function setRangeFill(input) {
 
 function updateSignalReadouts() {
   const level = displayedEmgLevel;
-  latestVoltage = 0.08 + (level / 100) * 2.65;
-  latestGrip = level < thresholdLevel ? 0 : Math.round((level - thresholdLevel) / Math.max(1, 100 - thresholdLevel) * 100);
+  if (hardwareMode && latestHardware) {
+    latestVoltage = Number.isFinite(latestHardware.voltage) ? latestHardware.voltage : 0;
+    latestGrip = Math.round(clamp(latestHardware.grip || 0, 0, 1) * 100);
+  } else {
+    latestVoltage = 0.08 + (level / 100) * 2.65;
+    latestGrip = level < thresholdLevel ? 0 : Math.round((level - thresholdLevel) / Math.max(1, 100 - thresholdLevel) * 100);
+  }
   const voltage = latestVoltage.toFixed(2);
   $("#emg-voltage").innerHTML = voltage + ' <small>V</small>';
   $("#emg-value-small").textContent = voltage + " V";
   $("#signal-stat-voltage").textContent = voltage + " V";
   $("#signal-stat-level").textContent = Math.round(level) + "%";
   $("#signal-stat-grip").textContent = latestGrip + "%";
-  const state = level < thresholdLevel ? "RESTING" : level < thresholdLevel + 23 ? "ACTIVATING" : "CONTRACTED";
+  const state = hardwareMode && latestHardware
+    ? (latestHardware.active ? "CONTRACTED" : "RESTING")
+    : (level < thresholdLevel ? "RESTING" : level < thresholdLevel + 23 ? "ACTIVATING" : "CONTRACTED");
   $("#signal-state").textContent = state;
-  $("#signal-state").classList.toggle("active", level >= thresholdLevel);
+  $("#signal-state").classList.toggle("active", hardwareMode ? Boolean(latestHardware?.active) : level >= thresholdLevel);
   $("#signal-stat-state").textContent = state;
   $("#emg-meter").style.width = level + "%";
   $("#grip-value").textContent = latestGrip + "%";
   $("#emg-slider-value").textContent = Math.round(level);
-  $("#emg-slider").value = Math.round(baseEmgLevel);
-  $("#emg-slider-large").value = Math.round(baseEmgLevel);
-  $$(".range-control").forEach(setRangeFill);
+  $("#emg-slider").value = Math.round(hardwareMode ? level : baseEmgLevel);
+  $("#emg-slider-large").value = Math.round(hardwareMode ? level : baseEmgLevel);
+  $(".range-control").forEach(input => {
+    input.disabled = hardwareMode && input.id !== "threshold-slider";
+    setRangeFill(input);
+  });
+  $("#threshold-slider").disabled = hardwareMode;
+  $("#emg-auto").disabled = hardwareMode;
+  $(".range-control").forEach(input => input.classList.toggle("hardware-locked", hardwareMode));
 }
 
 function handleEmgInput(value) {
@@ -736,6 +760,120 @@ function handleEmgInput(value) {
   setProportionalGrip(displayedEmgLevel);
   updateSignalReadouts();
   addSignalSample(displayedEmgLevel);
+}
+
+function updateHardwareStatus(connected) {
+  $("#hardware-status").textContent = connected ? "ESP32 CONNECTED" : "HARDWARE OFFLINE";
+  $("#serial-connect").setAttribute("aria-pressed", String(connected));
+  $("#serial-connect").innerHTML = connected
+    ? '<span class="connect-glyph">↔</span> Disconnect ESP32'
+    : '<span class="connect-glyph">↔</span> Connect ESP32';
+  $("#signal-stream-status").innerHTML = '<i></i> ' + (connected ? "LIVE ESP32 STREAM" : "SIMULATED STREAM");
+  $("#emg-source-note").textContent = connected
+    ? "Live USB serial input from ESP32. Voltage is an ADC estimate; verify calibration on your exact board."
+    : "Synthetic signal for demonstration. Connect an ESP32 to view real sensor telemetry.";
+  $("#simulate-flex").innerHTML = connected ? "Resume EMG control <span>↗</span>" : 'Simulate contraction <span>↗</span>';
+  $("#simulate-rest").textContent = connected ? "Force open" : "Rest";
+}
+
+function parseHardwareLine(line) {
+  if (!line || !line.includes("raw=") || !line.includes("grip=")) return;
+  const values = {};
+  line.trim().split(",").forEach(part => {
+    const separator = part.indexOf("=");
+    if (separator < 1) return;
+    values[part.slice(0, separator).trim()] = part.slice(separator + 1).trim();
+  });
+  const voltage = Number(values.env_est_V);
+  const grip = Number(values.grip);
+  const active = Number(values.active) === 1;
+  if (!Number.isFinite(grip)) return;
+
+  latestHardware = {
+    raw: Number(values.raw),
+    filtered: Number(values.filtered),
+    baseline: Number(values.baseline),
+    voltage: Number.isFinite(voltage) ? voltage : 0,
+    grip: clamp(grip, 0, 1),
+    active,
+    mode: values.mode || "AUTO"
+  };
+  hardwareMode = true;
+  displayedEmgLevel = clamp((latestHardware.voltage / 3.3) * 100, 0, 100);
+  applyGripAmount(latestHardware.grip, active ? "POSE: LIVE EMG GRIP" : "POSE: LIVE EMG / REST");
+  addSignalSample(displayedEmgLevel);
+  updateSignalReadouts();
+  if ($("#signal-pane").classList.contains("active")) drawSignalChart();
+}
+
+async function connectSerial() {
+  if (!("serial" in navigator) || !window.isSecureContext) {
+    alert("USB serial needs Chrome or Edge and a secure page (HTTPS or localhost). You can still use simulation mode.");
+    return;
+  }
+  try {
+    serialPort = await navigator.serial.requestPort();
+    await serialPort.open({ baudRate: 115200 });
+    serialReader = serialPort.readable.getReader();
+    serialWriter = serialPort.writable.getWriter();
+    serialConnected = true;
+    hardwareMode = true;
+    latestHardware = null;
+    updateHardwareStatus(true);
+
+    const decoder = new TextDecoder();
+    let buffer = "";
+    while (serialConnected) {
+      const result = await serialReader.read();
+      if (result.done) break;
+      buffer += decoder.decode(result.value, { stream: true });
+      const lines = buffer.split(/\r?\n/);
+      buffer = lines.pop() || "";
+      lines.forEach(parseHardwareLine);
+    }
+  } catch (error) {
+    if (error?.name !== "NotFoundError") {
+      console.error("ESP32 serial connection failed:", error);
+      alert("Could not connect to the ESP32. Check the USB cable, COM port and 115200 baud firmware.");
+    }
+  } finally {
+    serialConnected = false;
+    if (serialReader) {
+      try { serialReader.releaseLock(); } catch (_) {}
+    }
+    if (serialWriter) {
+      try { serialWriter.releaseLock(); } catch (_) {}
+    }
+    if (serialPort) {
+      try { await serialPort.close(); } catch (_) {}
+    }
+    serialReader = null;
+    serialWriter = null;
+    serialPort = null;
+    hardwareMode = false;
+    latestHardware = null;
+    updateHardwareStatus(false);
+    setPose("open");
+    updateSignalReadouts();
+  }
+}
+
+async function disconnectSerial() {
+  serialConnected = false;
+  if (serialReader) {
+    try { await serialReader.cancel(); } catch (_) {}
+  }
+}
+
+async function sendSerialCommand(command) {
+  if (!hardwareMode || !serialWriter) return false;
+  try {
+    await serialWriter.write(new TextEncoder().encode(command + "\n"));
+    return true;
+  } catch (error) {
+    console.error("Could not send command to ESP32:", error);
+    return false;
+  }
 }
 
 function addSignalSample(level) {
@@ -836,7 +974,15 @@ function animate(time, deltaArg) {
   const delta = Math.min(deltaArg || clock.getDelta(), 0.04);
   if (controls) controls.update();
   animateExplode(delta);
-  if (autoSignal && time - lastUiPaint > 90) {
+  if (hardwareMode && latestHardware) {
+    if (time - lastUiPaint > 90) {
+      displayedEmgLevel = clamp((latestHardware.voltage / 3.3) * 100, 0, 100);
+      addSignalSample(displayedEmgLevel);
+      updateSignalReadouts();
+      lastUiPaint = time;
+      if ($("#signal-pane").classList.contains("active")) drawSignalChart();
+    }
+  } else if (autoSignal && time - lastUiPaint > 90) {
     displayedEmgLevel = clamp(baseEmgLevel + Math.sin(time * 0.0018) * 1.8 + (Math.random() - 0.5) * 1.4, 0, 100);
     addSignalSample(displayedEmgLevel);
     updateSignalReadouts();
@@ -889,6 +1035,10 @@ function bindUi() {
   $("#xray-button").addEventListener("click", () => setXray(!xrayEnabled));
   $("#reset-view").addEventListener("click", resetCamera);
   $("#focus-hand").addEventListener("click", resetCamera);
+  $("#serial-connect").addEventListener("click", async () => {
+    if (serialPort || serialConnected) await disconnectSerial();
+    else await connectSerial();
+  });
 
   const rangeInputs = [$("#emg-slider"), $("#emg-slider-large")];
   rangeInputs.forEach(input => input.addEventListener("input", event => handleEmgInput(event.target.value)));
@@ -903,18 +1053,30 @@ function bindUi() {
     $("#emg-auto").setAttribute("aria-pressed", String(autoSignal));
     $("#emg-auto").innerHTML = (autoSignal ? "AUTO SIGNAL " : "SIGNAL HOLD ") + '<span class="tiny-switch"></span>';
   });
-  $("#simulate-flex").addEventListener("click", () => {
+  $("#simulate-flex").addEventListener("click", async () => {
+    if (hardwareMode) {
+      await sendSerialCommand("a");
+      return;
+    }
     baseEmgLevel = 78;
     displayedEmgLevel = 78;
     handleEmgInput(78);
   });
-  $("#simulate-rest").addEventListener("click", () => {
+  $("#simulate-rest").addEventListener("click", async () => {
+    if (hardwareMode) {
+      await sendSerialCommand("o");
+      applyGripAmount(0, "POSE: FORCE OPEN COMMAND");
+      if (latestHardware) latestHardware = { ...latestHardware, grip: 0, active: false };
+      updateSignalReadouts();
+      return;
+    }
     baseEmgLevel = 4;
     displayedEmgLevel = 4;
     handleEmgInput(4);
   });
   window.addEventListener("resize", drawSignalChart);
-  $$(".range-control").forEach(setRangeFill);
+  $(".range-control").forEach(setRangeFill);
+  updateHardwareStatus(false);
 }
 
 try {
