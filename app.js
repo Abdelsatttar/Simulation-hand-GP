@@ -714,12 +714,14 @@ function buildModel() {
   createThumb();
   createActuatorsAndCuff();
   createElectronics();
+  createForearmAndEmgPads();
+  createHandCamera();
   createFingerTendonRoutes();
 
-  createLabel("ESP32 DEVKIT", [-0.02, -2.37, 0.75], "#1d776d");
-  createLabel("sEMG / ENV", [0.7, -1.79, 0.57], "#1d776d");
-  createLabel("5× SERVO DRIVES", [0.85, -1.22, 0.53], "#95652f");
-  createLabel("TENDON ROUTE", [0.78, 0.77, 0.35], "#95652f");
+  createLabel("ESP32 MOTOR CTRL", [-0.02, -2.3, 0.75], "#1d776d");
+  createLabel("4-CH sEMG", [0.66, -4.34, 0.61], "#1d776d");
+  createLabel("FINGERTIP FORCE", [0.78, 0.87, 0.39], "#95652f");
+  createLabel("CAMERA MODULE", [-0.57, 0.05, 0.43], "#1d776d");
 
   // Slight natural yaw gives the shell and joint depth.
   handRoot.rotation.y = -0.12;
